@@ -6,9 +6,9 @@
 ## 交付标准（默认全部满足）
 
 1. **自包含单文件HTML**（CSS内联、零外部依赖），工作区根目录交付
-2. **SVG图示**：矢量、不重叠、清晰标注、字体≥9.5px、图号+说明；按需含三维视角图（爆炸图/等轴测）
-3. **每个知识点七层结构**：术语标题 → 通俗解释（含生活化类比）→ 五维深度解读 → 推荐书籍 → B站视频搜索指引
-4. **五维深度解读**：暗含假设（红）/ 第一性原理（蓝）/ 专业解读（绿）/ 形象化（橙）/ 扩展（紫）——**写作四要素（目标/句式骨架/质量标准/正反例）与知识类型权重表见 `references/html-structure.md`（v1.2）**
+2. **SVG图示**：矢量、不重叠、清晰标注、字体≥9.5px、图号+说明；**每个知识点必须配 ≥1 张适合的图示**（选型见 `references/svg-guide.md` §图示选型提示词；图必须承载信息，禁止装饰性配图）
+3. **每个知识点七层结构（基线）**：术语标题 → 通俗解释（含生活化类比）→ 五维深度解读 → 推荐书籍 → B站视频搜索指引；**可选维池 v1.3**：五维基线之上按需取 0-2 个（成本/对比/反直觉/案例），见 `references/html-structure.md` §可选维池
+4. **五维深度解读（基线）**：暗含假设（红）/ 第一性原理（蓝）/ 专业解读（绿）/ 形象化（橙）/ 扩展（紫）——**写作四要素（目标/句式骨架/质量标准/正反例）、知识类型权重表、可选维池四要素见 `references/html-structure.md`（v1.3）**
 5. **知识体系有逻辑**：通用基础 → 品类篇章 → 综合实战；模块编号与目录锚点同步
 6. **互操作**（模板默认启用）：结构挂 html-generator 双 class（语义类），手册可一键转 Word/PDF/Markdown
 
@@ -17,24 +17,29 @@
 ### Phase 1 深度调研
 - 围绕本轮要新增的内容定向搜索（每轮 ≤2 次）；关键数据（标准日期/数值/周期费用）**至少两个独立来源一致**才写入
 - 无搜索能力的智能体：基于自身知识构建，对不确定的数据标注"待联网核实"
+- 🔴 **CHECKPOINT**：调研完成先向用户展示关键数据与来源（双源一致项），确认后再进入体系设计
 
 ### Phase 2 知识体系设计
 - 层级：`category（篇）→ knowledge-block（节）→ kp（知识点）`
 - 顺序：通用基础模块 → 品类篇章 → 综合实战能力（闭环收尾）
 - 图示编号全局化（图0-1 … 图N-x），保持无缺口
+- 🛑 **STOP**：三层结构（category→block→kp）与图号规划是核心决策点，必须先经用户确认再生成骨架，禁止跳过
 
 ### Phase 3 HTML骨架生成
 - 以 `assets/handbook-template.html` 起步（完整CSS+封面+目录+两种kp格式示例+语义class）
 - 结构规范与七层知识点模板：读 `references/html-structure.md`
+- 🔴 **CHECKPOINT**：骨架生成后先跑 validate 确认结构通过，再开始内容填充
 
 ### Phase 4 SVG图示设计
 - 13类图型模式库与防重叠规则：读 `references/svg-guide.md`
 - 每幅图必须带 `<div class="fig-caption">` 图号说明；字号≥9.5px（lint 强制校验）
+- 🔴 **CHECKPOINT**：图示完成后抽查防重叠与图号连续性，再进入内容填充
 
 ### Phase 5 内容填充、批量编辑与验证
 - 大文件写入：先写第一块，后续块以追加方式写入（UTF-8）
 - **批量/增量编辑一律用 `scripts/handbook_tools.py`**（命令见下方速查表）
 - **任何对已有手册的编辑，先读 `references/editing-safety.md`**（踩坑沉淀的编辑工程规范）
+- 🛑 **STOP**：交付前 validate + lint 全绿，向用户展示验证结果并确认后再交付
 
 ## 工具命令速查（Python 3.8+ 零依赖）
 
@@ -47,6 +52,10 @@ python scripts/handbook_tools.py dupres    <手册.html>            # 书名重�
 python scripts/handbook_tools.py dedup     <手册.html> [--apply] # 重复deep检测/删除
 python scripts/handbook_tools.py replace   <手册.html> --old "锚点" --new "新内容" [--expect 1]
 python scripts/handbook_tools.py replace   <手册.html> --old-file a.txt --new-file b.txt
+python scripts/handbook_tools.py glossary  <手册.html>            # 术语表：提取全部kp-term去重（v1.4）
+python scripts/handbook_tools.py quiz      <手册.html>            # 考点卡片：抽取标准号/数字/类比/扩展名词
+python scripts/handbook_tools.py crossref  <手册.html>            # 知识点关联：共享书籍/B站词的kp对
+python scripts/handbook_tools.py path      <手册.html>            # 学习路径：基础→进阶→实战建议
 ```
 
 ## 增量增强模式（手册已存在时）
@@ -68,10 +77,10 @@ python scripts/handbook_tools.py replace   <手册.html> --old-file a.txt --new-
 
 1. div 累计平衡 = 0
 2. kp 资源覆盖 N/N（每个kp下方25行内有res）
-3. deep块数 = kp数，dim行数 = 5×kp数，无任何kp区域含>1个deep
+3. deep块数 = kp数，dim行数在 [5×kp, 7×kp] 区间（基线五维 + 可选维 0-2），无任何kp区域含>1个deep
 4. SVG总数与图号caption清单一致、编号无缺口
 5. `</html>` 闭合存在
-6. lint：deep五维齐全 / dim≥10字 / explain≥30字 / res含书籍与B站 / SVG字号≥9.5；**新写手册建议 `--strict` 硬伤为0**（principle量化锚为SUGGEST级，鼓励A级：∝/=/次方/定律名）
+6. lint：基线五维齐全 + 可选维0-2合法 / dim≥10字 / explain≥30字 / res含书籍与B站 / SVG字号≥9.5；**新写手册建议 `--strict` 硬伤为0**（principle量化锚、kp图示覆盖率<80%为SUGGEST级）
 7. 封面副标题与页脚统计同步更新
 
 > AI生成

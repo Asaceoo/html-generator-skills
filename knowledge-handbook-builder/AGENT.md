@@ -19,6 +19,10 @@ python scripts/handbook_tools.py dupres    <手册.html>            # 书名重�
 python scripts/handbook_tools.py dedup     <手册.html> [--apply]  # 重复deep检测/删除
 python scripts/handbook_tools.py replace   <手册.html> --old "锚点" --new "新内容" --expect 1
 python scripts/handbook_tools.py replace   <手册.html> --old-file 锚点.txt --new-file 新内容.txt
+python scripts/handbook_tools.py glossary  <手册.html>            # 术语表：kp-term去重
+python scripts/handbook_tools.py quiz      <手册.html>            # 考点卡片：标准号/数字/类比/扩展名词
+python scripts/handbook_tools.py crossref  <手册.html>            # 相关知识点：共享书籍/B站词
+python scripts/handbook_tools.py path      <手册.html>            # 学习路径：基础→进阶→实战
 ```
 （长中文内容走文件通道，规避 shell 引号转义）
 
@@ -47,7 +51,7 @@ python scripts/mcp_server.py          # stdio 传输
 1. **Phase 1** 深度调研：定向搜索、关键数据双源验证（无搜索能力时基于自身知识并标注"待联网核实"）
 2. **Phase 2** 体系设计：category → block → kp 三级层级，图号全局无缺口
 3. **Phase 3** 骨架：以 `assets/handbook-template.html` 起步（含 html-generator 双 class 语义标记）
-4. **Phase 4** SVG 图示：13类图型模式库见 `references/svg-guide.md`，字号≥9.5px（lint 强制）
+4. **Phase 4** SVG 图示：13类图型模式库见 `references/svg-guide.md`；**每个 kp 必须配 ≥1 张适合的图示**（选型提示词见该文件 §图示选型提示词），字号≥9.5px（lint 强制）
 5. **Phase 5** 编辑与验证：批量编辑用 `replace --expect 1` 原子替换；交付前 `validate` + `lint` 全绿
 
 ## 三、资源索引
@@ -55,7 +59,7 @@ python scripts/mcp_server.py          # stdio 传输
 | 文件 | 内容 |
 |------|------|
 | `references/workflow.md` | **核心流程唯一源**（本文件与 TeleAgent 的 SKILL.md 共同引用，修改流程只改此文件） |
-| `references/html-structure.md` | CSS类体系、七层知识点模板、双class语义标记 |
+| `references/html-structure.md` | CSS类体系、七层基线+可选维池（v1.3）、双class语义标记 |
 | `references/svg-guide.md` | 13类图型模式 + 等轴测坐标公式 + 防重叠规则 |
 | `references/editing-safety.md` | 编辑防错工程（真实事故案例与解法） |
 | `assets/handbook-template.html` | 手册骨架模板（含语义class） |

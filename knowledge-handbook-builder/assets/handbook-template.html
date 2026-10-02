@@ -47,6 +47,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .deep .dim.pro .dim-label{color:#16a34a}
 .deep .dim.vivid .dim-label{color:#f59e0b}
 .deep .dim.ext .dim-label{color:#7c3aed}
+/* 可选维池（双轨制 v1.3：五维基线 + 可选 0-2 维） */
+.deep .dim.cost .dim-label{color:#b45309}
+.deep .dim.compare .dim-label{color:#0f766e}
+.deep .dim.counterintuition .dim-label{color:#db2777}
+.deep .dim.case .dim-label{color:#c2410c}
 /* 资源块 */
 .res{margin-top:10px;padding:8px 12px;background:var(--purple-light);border-radius:8px;font-size:12.5px;border-left:3px solid var(--purple);line-height:1.7}
 .res .rlabel{color:var(--purple);font-weight:700;margin-right:4px}
@@ -157,6 +162,8 @@ svg .hot{fill:#dc2626;font-weight:700}
       <div class="dim pro"><span class="dim-label">专业解读：</span>…</div>
       <div class="dim vivid"><span class="dim-label">形象化：</span>…</div>
       <div class="dim ext"><span class="dim-label">扩展：</span>…</div>
+      <!-- 可选维池示例（v1.3 双轨制：按需取 0-2 个，插在五维之后；类名 cost/compare/counterintuition/case） -->
+      <div class="dim cost"><span class="dim-label">成本：</span>{{构成占比——降本路径}}</div>
     </div>
     <div class="res callout" data-variant="resource"><span class="rlabel">书籍：</span><span class="book">《书名》</span><span class="rlabel">B站：</span><span class="vid">搜索「关键词」</span></div></div>
 

@@ -1,6 +1,6 @@
 ---
 name: knowledge-handbook-builder
-description: "Build a self-contained HTML knowledge handbook for any domain via a five-phase workflow: multi-source deep research with cross-validation → knowledge system design (domain → modules → knowledge points) → HTML skeleton generation → SVG diagram design (non-overlapping, labeled, with 3D/isometric views) → seven-layer knowledge point structure (term + plain-language explanation + five-dimension deep dive [implicit assumptions / first principles / professional interpretation / vivid analogy / extended knowledge] + recommended books + Bilibili video search terms). Includes lint for content quality (deep five-dims completeness, minimum lengths, SVG font-size, fig-id pairing) and dual-class semantic markup for html-generator interop (handbooks convert to Word/PDF/Markdown). Use when the user asks to 深度研究并做成手册, 构建XX知识体系, 品类知识手册, 知识手册含图示/书籍/视频, deep research a domain and produce a handbook, or wants to expand/upgrade an existing handbook (add diagrams, books, videos, five-dimension deep dive to every knowledge point)."
+description: "Build a self-contained HTML knowledge handbook for any domain via five phases: multi-source research → knowledge system design → HTML skeleton → SVG diagrams (every knowledge point gets a fitting diagram; 13 patterns incl. isometric) → seven-layer structure (term + plain explanation + five baseline deep-dive dims [assumptions / first principles / professional interpretation / vivid analogy / extension] + optional dim pool [cost / compare / counterintuition / case, 0-2] + recommended books + Bilibili search terms). Dual-mode lint (baseline dims mandatory, optional 0-2 valid; fig-id / font-size / coverage) + dual-class markup for html-generator interop (convert to Word/PDF/Markdown). Use when the user asks to 深度研究并做成手册, 构建XX知识体系, 品类知识手册, 知识手册含图示/书籍/视频, deep research a domain and produce a handbook, or expand/upgrade an existing handbook (add diagrams, books, videos, deep-dive dimensions)."
 name_cn: 知识手册构建器
 description_cn: 深度调研任意领域，生成含SVG图示、五维深度解读、推荐书籍与B站视频的自包含HTML知识手册，支持一键转Word/PDF
 ---
@@ -24,7 +24,10 @@ description_cn: 深度调研任意领域，生成含SVG图示、五维深度解�
 ## 关键能力速览（详见 workflow.md）
 
 - **原子替换**：`python scripts/handbook_tools.py replace <html> --old "锚点" --new "新内容" --expect 1`——锚点未找到(exit 2)/次数不符(exit 3)自动拒绝且不动文件，已实测69+处插入零失败
-- **双重验证**：`validate`（结构6项：div平衡/资源覆盖/deep统计/重复检测/图号/闭合）+ `lint`（内容质量：deep五维齐全/字数下限/res指引/图号配对/SVG字号）——全绿才交付
+- **双重验证**：`validate`（结构6项：div平衡/资源覆盖/deep统计[5k~7k]/重复检测/图号/闭合）+ `lint`（内容质量：基线五维+可选维0-2/字数下限/res指引/图号配对/SVG字号）——全绿才交付
+- **可选维池 v1.3**：五维基线之上按需取 0-2 个（成本/对比/反直觉/案例），写作规范见 `references/html-structure.md` §可选维池
+- **内容增值 v1.4**：`glossary` 术语表 / `quiz` 考点卡片 / `crossref` 知识点关联 / `path` 学习路径；`lint --strict` 自动判定知识类型（工艺/标准/管理/概念）
+- **每 kp 配图**：每个知识点必须配 ≥1 张适合的 SVG（13 类图型选型提示词见 `references/svg-guide.md`），`lint --strict` 校验图示覆盖率
 - **跨平台零依赖**：Python 3.8+ 标准库；LF/CRLF 自动兼容
 
 ## 通用性（供其他 AI 智能体使用）
