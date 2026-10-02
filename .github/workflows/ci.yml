@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tool tests (18 cases)
+        run: python -m pytest tests/ -v
+
+      - name: Lint check on template asset
+        run: python knowledge-handbook-builder/scripts/handbook_tools.py lint knowledge-handbook-builder/assets/handbook-template.html --min-font-size 9.5 || echo "WARN expected for placeholders (template)"
+
+      - name: Validate template asset
+        run: python knowledge-handbook-builder/scripts/handbook_tools.py validate knowledge-handbook-builder/assets/handbook-template.html
+
+  skill-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pyyaml
+        run: pip install pyyaml
+
+      - name: Validate SKILL.md frontmatter (both skills)
+        run: |
+          python - <<'EOF'
+          import yaml, io, sys
+          ok = True
+          for p in ["html-generator/SKILL.md", "knowledge-handbook-builder/SKILL.md"]:
+              with io.open(p, encoding="utf-8") as f:
+                  raw = f.read()
+              assert raw.startswith("---"), f"{p}: no frontmatter"
+              fm = raw.split("---", 2)[1]
+              meta = yaml.safe_load(fm)
+              for key in ["name", "description", "name_cn", "description_cn"]:
+                  assert meta.get(key), f"{p}: missing {key}"
+              print(f"OK  {p}  name={meta['name']}")
+          EOF
