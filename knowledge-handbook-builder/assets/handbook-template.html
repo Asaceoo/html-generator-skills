@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{手册标题}}（知识手册）</title>
+<style>
+:root{
+  --primary:#2563eb;--primary-light:#dbeafe;--accent:#f59e0b;--accent-light:#fef3c7;
+  --bg:#f8fafc;--card:#fff;--text:#1e293b;--text-muted:#64748b;--border:#e2e8f0;
+  --green:#16a34a;--green-light:#dcfce7;--purple:#7c3aed;--purple-light:#ede9fe;
+  --red:#dc2626;--red-light:#fee2e2;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:24px 16px}
+.container{max-width:1100px;margin:0 auto}
+.cover{text-align:center;padding:56px 24px 48px;background:linear-gradient(135deg,#0f172a,#1e3a5f,#2563eb);color:#fff;border-radius:16px;margin-bottom:32px}
+.cover h1{font-size:34px;margin-bottom:14px;letter-spacing:2px}
+.cover .subtitle{font-size:16px;opacity:.88}
+.cover .meta{margin-top:22px;font-size:13px;opacity:.7}
+.toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:32px}
+.toc h2{font-size:18px;margin-bottom:16px;color:var(--primary)}
+.toc ol{padding-left:24px}
+.toc li{margin:6px 0}
+.toc a{color:var(--text);text-decoration:none}
+.toc a:hover{color:var(--primary)}
+.category{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px 28px;margin-bottom:28px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.category-header{display:flex;align-items:center;gap:12px;margin-bottom:8px;padding-bottom:16px;border-bottom:2px solid var(--primary-light)}
+.category-num{background:var(--primary);color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.category-header h2{font-size:24px;color:var(--text)}
+.category-tag{font-size:12px;color:var(--primary);background:var(--primary-light);padding:3px 12px;border-radius:20px}
+.category-intro{font-size:14px;color:var(--text-muted);margin-bottom:24px;line-height:1.7}
+.knowledge-block{margin-top:24px}
+.block-title{font-size:17px;font-weight:700;color:var(--primary);margin-bottom:14px;padding-left:12px;border-left:4px solid var(--primary)}
+.block-title.purple{color:var(--purple);border-left-color:var(--purple)}
+.kp{margin-bottom:16px;padding:14px 18px;background:#f9fafb;border-radius:8px;border-left:3px solid var(--border)}
+.kp:hover{border-left-color:var(--accent)}
+.kp-term{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.kp-explain{font-size:14px;color:var(--text-muted);line-height:1.85}
+.kp-explain strong{color:var(--text)}
+/* 五维深度解读 */
+.deep{margin-top:10px;padding:10px 14px;background:#fff;border:1px solid var(--border);border-radius:8px}
+.deep .dim{font-size:12.5px;color:#475569;margin:7px 0;line-height:1.75;padding-left:10px;border-left:3px solid #e2e8f0;font-weight:400}
+.deep .dim-label{font-weight:700;margin-right:4px;white-space:nowrap}
+.deep .dim.assumption .dim-label{color:#dc2626}
+.deep .dim.principle .dim-label{color:#2563eb}
+.deep .dim.pro .dim-label{color:#16a34a}
+.deep .dim.vivid .dim-label{color:#f59e0b}
+.deep .dim.ext .dim-label{color:#7c3aed}
+/* 资源块 */
+.res{margin-top:10px;padding:8px 12px;background:var(--purple-light);border-radius:8px;font-size:12.5px;border-left:3px solid var(--purple);line-height:1.7}
+.res .rlabel{color:var(--purple);font-weight:700;margin-right:4px}
+.res .book{display:inline;margin-right:10px}
+.res .vid{display:inline}
+/* 图示 */
+.fig{margin:18px 0;padding:16px 12px;background:#fff;border:1px solid var(--border);border-radius:10px}
+.fig svg{max-width:100%;height:auto;display:block;margin:0 auto}
+.fig-caption{margin-top:10px;font-size:13px;color:var(--text-muted);text-align:center;line-height:1.6}
+.fig-caption strong{color:var(--text)}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+th{background:var(--primary-light);color:var(--text);font-weight:700}
+tr:nth-child(even){background:#f9fafb}
+.tip{background:var(--green-light);border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin:14px 0;font-size:13px;color:#15803d}
+.warn{background:var(--accent-light);border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin:14px 0;font-size:13px;color:#b45309}
+.danger{background:var(--red-light);border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin:14px 0;font-size:13px;color:#b91c1c}
+footer{text-align:center;padding:32px;color:var(--text-muted);font-size:13px}
+svg text{font-family:inherit}
+svg .lbl{font-size:12.5px;fill:#1e293b;font-weight:600}
+svg .sub{font-size:11px;fill:#64748b}
+svg .sm{font-size:10px;fill:#64748b}
+svg .tt{font-size:15px;fill:#1e293b;font-weight:700}
+svg .hot{fill:#dc2626;font-weight:700}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="cover">
+  <h1>{{手册标题}}</h1>
+  <div class="subtitle">N幅图示（含三维爆炸图/等轴测/剖面/决策树）· M个知识点全部配推荐书籍与B站视频 + 通俗类比解释</div>
+  <div class="meta">{{品类1}} · {{品类2}} · {{品类3}}<br>+ 通用基础：{{子模块清单}}（全图解）</div>
+</div>
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#basics">第0篇 通用基础技能（产品经理必读）</a>
+      <ol>
+        <li><a href="#module1">{{0.1 子模块}}（…）</a></li>
+      </ol>
+    </li>
+    <li><a href="#cat1">第1篇 {{品类}}（含…图示）</a></li>
+    <li><a href="#appendix">附录 {{附录主题}}</a></li>
+  </ol>
+</div>
+
+<!-- ================= 第0篇 通用基础 ================= -->
+<div class="category" id="basics">
+  <div class="category-header">
+    <div class="category-num">0</div>
+    <h2>通用基础技能模块</h2>
+    <span class="category-tag">产品经理必读 · 跨品类基础 · 全图解</span>
+  </div>
+  <div class="category-intro">{{本篇引言：为什么这些是跨品类的通用语言}}</div>
+
+  <div class="knowledge-block" id="module1">
+    <div class="block-title purple">0.1 {{子模块标题}}</div>
+
+    <!-- 多行格式知识点示例（完整七层结构） -->
+    <div class="kp">
+      <div class="kp-term">{{知识点标题}}</div>
+      <div class="kp-explain">{{通俗解释：先专业定义，再"好比/相当于"生活化类比收尾，150-200字，关键词用strong}}</div>
+      <div class="deep">
+        <div class="dim assumption"><span class="dim-label">暗含假设：</span>{{概念成立的前提与失效边界}}</div>
+        <div class="dim principle"><span class="dim-label">第一性原理：</span>{{底层物理/逻辑本质}}</div>
+        <div class="dim pro"><span class="dim-label">专业解读：</span>{{标准号/精确参数/实操细节}}</div>
+        <div class="dim vivid"><span class="dim-label">形象化：</span>{{一个日常类比，20-40字}}</div>
+        <div class="dim ext"><span class="dim-label">扩展：</span>{{进阶方向/行业趋势/相邻标准}}</div>
+      </div>
+      <div class="res"><span class="rlabel">书籍：</span><span class="book">《{{真实书名}}》{{作者/出版社}}——{{一句话定位}}</span><span class="rlabel">B站：</span><span class="vid">搜索「{{关键词1}}」「{{关键词2}}」</span></div>
+    </div>
+
+    <!-- 图示示例：替换为真实SVG（viewBox="0 0 920 H"，规范见references/svg-guide.md） -->
+    <div class="fig">
+      <svg viewBox="0 0 920 200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="920" height="200" fill="#fafbfc"/>
+        <text x="460" y="28" text-anchor="middle" class="tt">图0-1 {{图示标题}}</text>
+        <!-- 图形内容：panel用g transform独立定位；每幅配defs内marker；箭头/标注不重叠 -->
+      </svg>
+      <div class="fig-caption"><strong>图0-1</strong> {{一句话说明}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 第1篇 品类示例 ================= -->
+<div class="category" id="cat1">
+  <div class="category-header">
+    <div class="category-num">1</div>
+    <h2>{{品类名}}</h2>
+    <span class="category-tag">{{行业定位标签}}</span>
+  </div>
+  <div class="category-intro">{{本篇引言}}</div>
+
+  <div class="knowledge-block">
+    <div class="block-title">一、{{节标题}}</div>
+
+    <!-- 单行格式知识点示例（批量追加效率高） -->
+    <div class="kp"><div class="kp-term">{{标题}}</div><div class="kp-explain">{{解释}}</div>
+    <div class="deep">
+      <div class="dim assumption"><span class="dim-label">暗含假设：</span>…</div>
+      <div class="dim principle"><span class="dim-label">第一性原理：</span>…</div>
+      <div class="dim pro"><span class="dim-label">专业解读：</span>…</div>
+      <div class="dim vivid"><span class="dim-label">形象化：</span>…</div>
+      <div class="dim ext"><span class="dim-label">扩展：</span>…</div>
+    </div>
+    <div class="res"><span class="rlabel">书籍：</span><span class="book">《书名》</span><span class="rlabel">B站：</span><span class="vid">搜索「关键词」</span></div></div>
+
+    <table>
+      <tr><th>{{列1}}</th><th>{{列2}}</th></tr>
+      <tr><td>…</td><td>…</td></tr>
+    </table>
+    <div class="warn"><strong>{{警示标题}}</strong>：{{要点}}</div>
+  </div>
+</div>
+
+<!-- ================= 附录 ================= -->
+<div class="category" id="appendix">
+  <div class="category-header">
+    <div class="category-num">★</div>
+    <h2>附录：{{书单/学习路径}}</h2>
+    <span class="category-tag">跨品类基础能力</span>
+  </div>
+  <div class="knowledge-block">
+    <table>
+      <tr><th>方向</th><th>书名</th><th>作者</th><th>核心</th></tr>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <p>{{手册标题}}（知识手册）</p>
+  <p style="margin-top:8px">通用基础 + N大品类 + 每个知识点配推荐书籍与B站视频 + N幅SVG图示(含三维图/剖面/决策树)</p>
+</footer>
+
+</div>
+</body>
+</html>
