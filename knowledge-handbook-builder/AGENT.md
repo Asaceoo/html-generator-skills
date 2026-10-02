@@ -23,6 +23,7 @@ python scripts/handbook_tools.py glossary  <手册.html>            # 术语表�
 python scripts/handbook_tools.py quiz      <手册.html>            # 考点卡片：标准号/数字/类比/扩展名词
 python scripts/handbook_tools.py crossref  <手册.html>            # 相关知识点：共享书籍/B站词
 python scripts/handbook_tools.py path      <手册.html>            # 学习路径：基础→进阶→实战
+python scripts/handbook_tools.py coverage  <手册.html>            # 知识覆盖检查：类型分布/偏科/产业链盲区
 ```
 （长中文内容走文件通道，规避 shell 引号转义）
 

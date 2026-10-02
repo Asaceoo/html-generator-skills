@@ -20,6 +20,7 @@ Knowledge Handbook Tools (知识手册构建/编辑工具集)
   python handbook_tools.py quiz      <html>              考点卡片：抽取标准号/数字/类比/扩展名词（供LLM出题）
   python handbook_tools.py crossref  <html>              知识点关联：共享书籍/B站词的kp对
   python handbook_tools.py path      <html>              学习路径：按category结构输出基础→进阶→实战
+  python handbook_tools.py coverage  <html>              知识覆盖检查：类型分布/偏科/产业链盲区（v1.4.1）
   python handbook_tools.py replace   <html> --old O --new N [--expect 1]
                                                           安全替换：锚点出现次数==expect才执行，否则拒绝并保持文件不变
   python handbook_tools.py replace   <html> --old-file f --new-file f
@@ -363,6 +364,48 @@ def cmd_dedup(args):
     print(f"Deleted {len(delset)} line(s). File updated.")
     return 0
 
+
+def cmd_coverage(args):
+    """知识覆盖检查：复用类型判定统计分布 + 产业链节点粗分，提示偏科盲区（广度闸，v1.4.1）。"""
+    text = read_text(args.file)
+    lines = split_lines(text)
+    regions = find_kp_regions(lines)
+    type_counts = {"概念型": 0, "工艺型": 0, "标准型": 0, "管理型": 0}
+    chain = {"上游": 0, "本体": 0, "下游": 0}
+    for s, e in regions:
+        dstart = next((i for i in range(s, e) if is_deep_line(lines[i])), None)
+        if dstart is None:
+            continue
+        dend = block_end(lines, dstart)
+        if dend < 0:
+            continue
+        dims = _dim_contents(lines, dstart, dend)
+        term = kp_term(lines, s)
+        pro = dims.get("pro", "")
+        ktype = _detect_ktype(pro)
+        if ktype:
+            type_counts[ktype] += 1
+        blob = term + (dims.get("pro", "") or "")
+        if re.search(r'原材料|基材|板材|膜|胶水|五金|设备|供应|采购', blob):
+            chain["上游"] += 1
+        elif re.search(r'安装|验收|渠道|销售|售后|客户|交付|门店', blob):
+            chain["下游"] += 1
+        else:
+            chain["本体"] += 1
+    total = sum(type_counts.values())
+    print(f"== 覆盖检查（{total} 个知识点）==")
+    if total:
+        for t, c in type_counts.items():
+            pct = c * 100.0 / total
+            flag = "  ⚠️ 疑似盲区" if (c == 0 or pct < 10) else ""
+            print(f"  {t}: {c} 个 ({pct:.0f}%){flag}")
+        print(f"  产业链粗分: 上游 {chain['上游']} / 本体 {chain['本体']} / 下游 {chain['下游']}")
+        if chain["上游"] == 0 or chain["下游"] == 0:
+            print("  ⚠️ 上游或下游节点为 0，疑似产业链盲区")
+    else:
+        print("  无带 deep 的知识点可判定")
+    return 0
+
 def cmd_replace(args):
     old = args.old if args.old is not None else (read_text(args.old_file) if args.old_file else None)
     new = args.new if args.new is not None else (read_text(args.new_file) if args.new_file else None)
@@ -400,6 +443,26 @@ def _dim_contents(lines, dstart, dend):
         if m:
             out[m.group(1)] = re.sub(r'<[^>]+>', '', m.group(2)).strip()
     return out
+
+
+def _detect_ktype(pro):
+    """按 pro 维特征词计分判定知识类型（工艺/标准/管理/概念）；pro 为空返回 None。"""
+    if not pro:
+        return None
+    score = {"工艺型": 0, "标准型": 0, "管理型": 0}
+    if re.search(r'温度|压力|MPa|℃|浓度|分钟|转速|流量|速率|压强', pro):
+        score["工艺型"] += 3
+    if re.search(r'厚度|mm|时间|工序|工艺|参数|设备|批次|节拍', pro):
+        score["工艺型"] += 2
+    if re.search(r'\b(?:GB|GB/T|ISO|IEC|EN|ASTM|UL|IPC|JIS|DIN)\s?[\d.]', pro):
+        score["标准型"] += 1
+    if re.search(r'标准|条款|适用范围|偏差|公差|等级|试验方法|测量点', pro):
+        score["标准型"] += 2
+    if re.search(r'流程|模板|步骤|评审|框架|矩阵|清单|打分|面谈|方法|团队', pro):
+        score["管理型"] += 2
+    if all(v == 0 for v in score.values()):
+        return "概念型"
+    return max(score, key=score.get)
 
 def _common_frag(a, b, n=10):
     """a 与 b 是否存在 ≥n 字的公共连续片段（类比重复检测）"""
@@ -528,21 +591,7 @@ def cmd_lint(args):
             # [S8] 知识类型检测（SUGGEST：特征词计分取高分，提醒重点维写作）
             pr = dims.get("pro", "")
             if pr:
-                score = {"工艺型": 0, "标准型": 0, "管理型": 0}
-                if re.search(r'温度|压力|MPa|℃|浓度|分钟|转速|流量|速率|压强', pr):
-                    score["工艺型"] += 3
-                if re.search(r'厚度|mm|时间|工序|工艺|参数|设备|批次|节拍', pr):
-                    score["工艺型"] += 2
-                if re.search(r'\b(?:GB|GB/T|ISO|IEC|EN|ASTM|UL|IPC|JIS|DIN)\s?[\d.]', pr):
-                    score["标准型"] += 1
-                if re.search(r'标准|条款|适用范围|偏差|公差|等级|试验方法|测量点', pr):
-                    score["标准型"] += 2
-                if re.search(r'流程|模板|步骤|评审|框架|矩阵|清单|打分|面谈|方法|团队', pr):
-                    score["管理型"] += 2
-                if all(v == 0 for v in score.values()):
-                    ktype = "概念型"
-                else:
-                    ktype = max(score, key=score.get)
+                ktype = _detect_ktype(pr)
                 tips = {"概念型": "暗含假设写定义边界",
                         "标准型": "暗含假设写适用范围+过渡期；专业解读精确到条款",
                         "工艺型": "第一性原理争取A级定量；专业解读给参数窗口",
@@ -604,6 +653,9 @@ def main():
 
     sp = sub.add_parser("path", help="derive a stage-by-stage learning path from category structure")
     add_file(sp); sp.set_defaults(fn=cmd_path)
+
+    sp = sub.add_parser("coverage", help="knowledge coverage check: type distribution + chain gaps")
+    add_file(sp); sp.set_defaults(fn=cmd_coverage)
 
     sp = sub.add_parser("dedup", help="detect/remove duplicate deep blocks in kp regions")
     add_file(sp); sp.add_argument("--apply", action="store_true",
