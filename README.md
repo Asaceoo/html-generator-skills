@@ -27,8 +27,11 @@ python knowledge-handbook-builder/scripts/handbook_tools.py replace <手册.html
 
 | 文档 | 说明 |
 |------|------|
-| [用户手册_v1.0.md](用户手册_v1.0.md) | 面向使用者：场景、指令示例、FAQ |
-| [技术手册_v1.0.md](技术手册_v1.0.md) | 面向开发者：架构、模块、验证、版本演进 |
+| [用户手册_v1.1.md](用户手册_v1.1.md) | 面向使用者：场景、指令示例、FAQ |
+| [技术手册_v1.1.md](技术手册_v1.1.md) | 面向开发者：架构、模块、验证、版本演进 |
+| [CHANGELOG.md](CHANGELOG.md) | 版本历史（semver） |
+| [tests/](tests/) | 18 项 pytest 自动化测试 |
+| [.github/workflows/ci.yml](.github/workflows/ci.yml) | CI：Python 3.9-3.12 矩阵测试 + 资产校验 |
 
 ## 目录结构
 

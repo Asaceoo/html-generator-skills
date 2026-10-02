@@ -73,10 +73,14 @@ svg .tt{font-size:15px;fill:#1e293b;font-weight:700}
 svg .hot{fill:#dc2626;font-weight:700}
 </style>
 </head>
-<body>
+<!-- 语义标记说明：本模板采用「双 class」设计——原有类（kp/res/deep 等）负责视觉样式，
+     追加的 html-generator 语义类（card/callout/heading/paragraph/table/title/end_page）
+     供 html-generator 转换脚本识别，从而支持一键转 Word/PDF/Markdown。
+     body 上的 class="mode-doc" 与 data-palette 是转换脚本识别模式与调色板的唯一依据。 -->
+<body class="mode-doc" data-palette="ink-blue">
 <div class="container">
 
-<div class="cover">
+<div class="cover title">
   <h1>{{手册标题}}</h1>
   <div class="subtitle">N幅图示（含三维爆炸图/等轴测/剖面/决策树）· M个知识点全部配推荐书籍与B站视频 + 通俗类比解释</div>
   <div class="meta">{{品类1}} · {{品类2}} · {{品类3}}<br>+ 通用基础：{{子模块清单}}（全图解）</div>
@@ -84,7 +88,7 @@ svg .hot{fill:#dc2626;font-weight:700}
 
 <div class="toc">
   <h2>目录</h2>
-  <ol>
+  <ol class="toc-list list">
     <li><a href="#basics">第0篇 通用基础技能（产品经理必读）</a>
       <ol>
         <li><a href="#module1">{{0.1 子模块}}（…）</a></li>
@@ -99,34 +103,34 @@ svg .hot{fill:#dc2626;font-weight:700}
 <div class="category" id="basics">
   <div class="category-header">
     <div class="category-num">0</div>
-    <h2>通用基础技能模块</h2>
+    <h2 class="heading" data-level="1">通用基础技能模块</h2>
     <span class="category-tag">产品经理必读 · 跨品类基础 · 全图解</span>
   </div>
   <div class="category-intro">{{本篇引言：为什么这些是跨品类的通用语言}}</div>
 
   <div class="knowledge-block" id="module1">
-    <div class="block-title purple">0.1 {{子模块标题}}</div>
+    <div class="block-title heading" data-level="2">0.1 {{子模块标题}}</div>
 
-    <!-- 多行格式知识点示例（完整七层结构） -->
-    <div class="kp">
-      <div class="kp-term">{{知识点标题}}</div>
-      <div class="kp-explain">{{通俗解释：先专业定义，再"好比/相当于"生活化类比收尾，150-200字，关键词用strong}}</div>
-      <div class="deep">
+    <!-- 多行格式知识点示例（完整七层结构，双class：kp+card / term+heading / explain+paragraph） -->
+    <div class="kp card" data-variant="kp">
+      <div class="kp-term heading" data-level="3">{{知识点标题}}</div>
+      <div class="kp-explain paragraph">{{通俗解释：先专业定义，再"好比/相当于"生活化类比收尾，150-200字，关键词用strong}}</div>
+      <div class="deep callout" data-variant="kp-deep">
         <div class="dim assumption"><span class="dim-label">暗含假设：</span>{{概念成立的前提与失效边界}}</div>
         <div class="dim principle"><span class="dim-label">第一性原理：</span>{{底层物理/逻辑本质}}</div>
         <div class="dim pro"><span class="dim-label">专业解读：</span>{{标准号/精确参数/实操细节}}</div>
         <div class="dim vivid"><span class="dim-label">形象化：</span>{{一个日常类比，20-40字}}</div>
         <div class="dim ext"><span class="dim-label">扩展：</span>{{进阶方向/行业趋势/相邻标准}}</div>
       </div>
-      <div class="res"><span class="rlabel">书籍：</span><span class="book">《{{真实书名}}》{{作者/出版社}}——{{一句话定位}}</span><span class="rlabel">B站：</span><span class="vid">搜索「{{关键词1}}」「{{关键词2}}」</span></div>
+      <div class="res callout" data-variant="resource"><span class="rlabel">书籍：</span><span class="book">《{{真实书名}}》{{作者/出版社}}——{{一句话定位}}</span><span class="rlabel">B站：</span><span class="vid">搜索「{{关键词1}}」「{{关键词2}}」</span></div>
     </div>
 
-    <!-- 图示示例：替换为真实SVG（viewBox="0 0 920 H"，规范见references/svg-guide.md） -->
+    <!-- 图示：含 svg 的容器无需语义类，转换脚本按 svg 特征走 chart_unknown 三层降级（截图/提取/跳过） -->
     <div class="fig">
       <svg viewBox="0 0 920 200" xmlns="http://www.w3.org/2000/svg">
         <rect width="920" height="200" fill="#fafbfc"/>
         <text x="460" y="28" text-anchor="middle" class="tt">图0-1 {{图示标题}}</text>
-        <!-- 图形内容：panel用g transform独立定位；每幅配defs内marker；箭头/标注不重叠 -->
+        <!-- 图形内容：panel用g transform独立定位；每幅配defs内marker；箭头/标注不重叠；字号≥9.5px -->
       </svg>
       <div class="fig-caption"><strong>图0-1</strong> {{一句话说明}}</div>
     </div>
@@ -137,30 +141,30 @@ svg .hot{fill:#dc2626;font-weight:700}
 <div class="category" id="cat1">
   <div class="category-header">
     <div class="category-num">1</div>
-    <h2>{{品类名}}</h2>
+    <h2 class="heading" data-level="1">{{品类名}}</h2>
     <span class="category-tag">{{行业定位标签}}</span>
   </div>
-  <div class="category-intro">{{本篇引言}}</div>
+  <div class="category-intro paragraph">{{本篇引言}}</div>
 
   <div class="knowledge-block">
-    <div class="block-title">一、{{节标题}}</div>
+    <div class="block-title heading" data-level="2">一、{{节标题}}</div>
 
-    <!-- 单行格式知识点示例（批量追加效率高） -->
-    <div class="kp"><div class="kp-term">{{标题}}</div><div class="kp-explain">{{解释}}</div>
-    <div class="deep">
+    <!-- 单行格式知识点示例（批量追加效率高，同样带双class） -->
+    <div class="kp card" data-variant="kp"><div class="kp-term heading" data-level="3">{{标题}}</div><div class="kp-explain paragraph">{{解释}}</div>
+    <div class="deep callout" data-variant="kp-deep">
       <div class="dim assumption"><span class="dim-label">暗含假设：</span>…</div>
       <div class="dim principle"><span class="dim-label">第一性原理：</span>…</div>
       <div class="dim pro"><span class="dim-label">专业解读：</span>…</div>
       <div class="dim vivid"><span class="dim-label">形象化：</span>…</div>
       <div class="dim ext"><span class="dim-label">扩展：</span>…</div>
     </div>
-    <div class="res"><span class="rlabel">书籍：</span><span class="book">《书名》</span><span class="rlabel">B站：</span><span class="vid">搜索「关键词」</span></div></div>
+    <div class="res callout" data-variant="resource"><span class="rlabel">书籍：</span><span class="book">《书名》</span><span class="rlabel">B站：</span><span class="vid">搜索「关键词」</span></div></div>
 
-    <table>
+    <table class="table">
       <tr><th>{{列1}}</th><th>{{列2}}</th></tr>
       <tr><td>…</td><td>…</td></tr>
     </table>
-    <div class="warn"><strong>{{警示标题}}</strong>：{{要点}}</div>
+    <div class="warn callout" data-variant="warning"><strong>{{警示标题}}</strong>：{{要点}}</div>
   </div>
 </div>
 
@@ -168,17 +172,17 @@ svg .hot{fill:#dc2626;font-weight:700}
 <div class="category" id="appendix">
   <div class="category-header">
     <div class="category-num">★</div>
-    <h2>附录：{{书单/学习路径}}</h2>
+    <h2 class="heading" data-level="1">附录：{{书单/学习路径}}</h2>
     <span class="category-tag">跨品类基础能力</span>
   </div>
   <div class="knowledge-block">
-    <table>
+    <table class="table">
       <tr><th>方向</th><th>书名</th><th>作者</th><th>核心</th></tr>
     </table>
   </div>
 </div>
 
-<footer>
+<footer class="end_page">
   <p>{{手册标题}}（知识手册）</p>
   <p style="margin-top:8px">通用基础 + N大品类 + 每个知识点配推荐书籍与B站视频 + N幅SVG图示(含三维图/剖面/决策树)</p>
 </footer>

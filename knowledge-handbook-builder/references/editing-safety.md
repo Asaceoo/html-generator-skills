@@ -89,4 +89,15 @@ Write-Output ("div平衡: $depth (应=0)")
 
 div平衡≠0时：逐段定位（每100行打印累计深度），在深度跳变点检查最近的插入。
 
+## 附：lint 内容质量校验（结构验证之外的另一道闸）
+
+`handbook_tools.py lint` 在 validate（结构）之外校验**内容质量**（只读、exit 1=有警告）：
+- deep 五维齐全（assumption/principle/pro/vivid/ext 各恰好1次）
+- dim 内容 ≥10字、kp-explain ≥30字
+- res 必须含书籍《》与 B站指引（曾逮住真实缺陷：批量替换脚本丢参数导致3处 book span 为空）
+- svg 数与 fig-caption 图号配对
+- SVG font-size ≥9.5px（--min-font-size 可调）
+
+实际战果：首次对 95-kp / 50-svg 手册运行即发现 54 处问题（3处书名丢失 + 51处字号超标），全部修复后 lint/validate 双 PASS。
+
 > AI生成

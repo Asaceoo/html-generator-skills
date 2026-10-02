@@ -12,6 +12,7 @@ Knowledge Handbook Tools (知识手册构建/编辑工具集)
   python handbook_tools.py stats     <html>              快速统计（kp/deep/svg/文件规模）
   python handbook_tools.py anchors   <html>              列出全部kp锚点（行号|格式|term|res书名）
   python handbook_tools.py dupres    <html>              检测书名重复与前缀冲突（锚点设计风险预警）
+  python handbook_tools.py lint     <html> [--min-font-size 9.5]  内容质量校验（deep五维/字数/指引/图号/字号）
   python handbook_tools.py dedup     <html> [--apply]    检测kp区域内重复deep块；--apply执行删除（保留第一个）
   python handbook_tools.py replace   <html> --old O --new N [--expect 1]
                                                           安全替换：锚点出现次数==expect才执行，否则拒绝并保持文件不变
@@ -49,15 +50,17 @@ def split_lines(text):
 
 # ---------------- 结构扫描 ----------------
 
-TERM_RE = re.compile(r'kp-term">([^<]+)<')
-RES_RE = re.compile(r'class="res"')
+TERM_RE = re.compile(r'kp-term[^>]*>([^<]+)<')
+RES_RE = re.compile(r'class="[^"]*\bres\b')
 BOOK_RE = re.compile(r'《([^》]{1,40})')
 
 def is_kp_line(line):
-    return line.lstrip().startswith('<div class="kp">')
+    m = re.match(r'\s*<div\s+class="([^"]*)"', line)
+    return bool(m) and "kp" in m.group(1).split()
 
 def is_deep_line(line):
-    return line.lstrip().startswith('<div class="deep">')
+    m = re.match(r'\s*<div\s+class="([^"]*)"', line)
+    return bool(m) and "deep" in m.group(1).split()
 
 def find_kp_regions(lines):
     """返回 [(start, end_exclusive), ...]，end 为下一个kp起始行或文件尾。"""
@@ -120,7 +123,7 @@ def cmd_validate(args):
         for ln, t in uncovered:
             print(f"    uncovered kp @line {ln}: {t}")
 
-    deepn = text.count('<div class="deep">')
+    deepn = len(re.findall(r'<div\s+class="[^"]*\bdeep\b', text))
     dimn = len(re.findall(r'class="dim ', text))
     print(f"[3] deep blocks: {deepn}; dim rows: {dimn}")
     if deepn > 0:
@@ -156,7 +159,8 @@ def cmd_stats(args):
     lines = split_lines(text)
     kpn = len(find_kp_regions(lines))
     print(f"file: {os.path.getsize(args.file) / 1024:.1f} KB / {len(lines)} lines")
-    print(f"kp: {kpn} | deep: {text.count('<div class=\"deep\">')} | "
+    deepn_s = len(re.findall(r'<div\s+class="[^"]*\bdeep\b', text))
+    print(f"kp: {kpn} | deep: {deepn_s} | "
           f"dim: {len(re.findall(r'class=\"dim ', text))} | svg: {text.count('<svg')} | "
           f"res: {len(RES_RE.findall(text))} | div-balance: "
           f"{text.count('<div') - text.count('</div>')}")
@@ -258,6 +262,85 @@ def cmd_replace(args):
     print(f"OK: replaced {n} occurrence(s). File updated.")
     return 0
 
+DIM_CLASSES = ("assumption", "principle", "pro", "vivid", "ext")
+
+def cmd_lint(args):
+    """内容质量校验：deep五维齐全/字数下限/res指引/图号配对/SVG字号。只读，不改文件。"""
+    text = read_text(args.file)
+    lines = split_lines(text)
+    regions = find_kp_regions(lines)
+    issues = []
+
+    # [1] deep 五维齐全 + [2] dim 内容长度
+    deep_kp = 0
+    for s, e in regions:
+        dstart = next((i for i in range(s, e) if is_deep_line(lines[i])), None)
+        if dstart is None:
+            continue
+        deep_kp += 1
+        dend = block_end(lines, dstart)
+        if dend < 0:
+            issues.append(f"kp[{kp_term(lines, s)}] deep 块 div 不配平 @line {dstart + 1}")
+            continue
+        block = "\n".join(lines[dstart:dend + 1])
+        for cls in DIM_CLASSES:
+            cnt = len(re.findall(r'class="dim %s"' % cls, block))
+            if cnt == 0:
+                issues.append(f"kp[{kp_term(lines, s)}] deep 缺 '{cls}' 维")
+            elif cnt > 1:
+                issues.append(f"kp[{kp_term(lines, s)}] deep 的 '{cls}' 维出现 {cnt} 次")
+        for i in range(dstart, dend + 1):
+            m = re.match(r'\s*<div class="dim[^"]*"><span class="dim-label">[^<]*</span>(.*?)</div>',
+                         lines[i])
+            if m:
+                content = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+                if len(content) < 10:
+                    issues.append(f"line {i + 1}: dim 内容过短({len(content)}字) kp[{kp_term(lines, s)}]")
+
+    # [3] kp-explain 长度（≥30字）
+    for s, e in regions:
+        joined = "\n".join(lines[s:e])
+        m = re.search(r'kp-explain">(.*?)</div>', joined, re.S)
+        if m:
+            content = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+            if len(content) < 30:
+                issues.append(f"kp[{kp_term(lines, s)}] explain 过短({len(content)}字)")
+
+    # [4] res 需含书籍与B站指引
+    for s, e in regions:
+        joined = "\n".join(lines[s:e])
+        rm = re.search(r'class="[^"]*\bres\b[^"]*".*?</div>', joined, re.S)
+        if rm:
+            if "《" not in rm.group(0):
+                issues.append(f"kp[{kp_term(lines, s)}] res 缺书籍《》")
+            if "B站" not in rm.group(0):
+                issues.append(f"kp[{kp_term(lines, s)}] res 缺B站视频指引")
+
+    # [5] svg 与 fig-caption 图号配对
+    svgn = text.count("<svg")
+    fig_ids = []
+    for l in lines:
+        if 'class="fig-caption"' in l:
+            fig_ids.extend(re.findall(r'图[A-Za-z0-9]+-\d+', l))
+    if svgn != len(fig_ids):
+        issues.append(f"svg({svgn}) 与 fig-caption 图号({len(fig_ids)}) 不配对")
+
+    # [6] SVG 字号下限（默认 9.5px，--min-font-size 可调）
+    min_fs = getattr(args, "min_font_size", 9.5)
+    for m in re.finditer(r'<svg.*?</svg>', text, re.S):
+        for fm in re.finditer(r'font-size[:=]\s*"?(\d+(?:\.\d+)?)', m.group(0)):
+            if float(fm.group(1)) < min_fs:
+                issues.append(f"SVG font-size {fm.group(1)} < {min_fs}（需≥{min_fs}px）")
+
+    print("== Knowledge Handbook Lint ==")
+    print(f"[1] deep five-dims: {deep_kp} kp checked")
+    print(f"[2] svg/caption ids: {svgn} / {len(fig_ids)}")
+    for it in issues:
+        print("  WARN " + it)
+    print(f"issues: {len(issues)}")
+    print("RESULT:", "PASS" if not issues else "WARN")
+    return 0 if not issues else 1
+
 # ---------------- CLI ----------------
 
 def main():
@@ -293,6 +376,13 @@ def main():
     sp.add_argument("--expect", type=int, default=1,
                     help="required number of anchor occurrences (default 1)")
     sp.set_defaults(fn=cmd_replace)
+
+    sp = sub.add_parser("lint", help="content quality lint (deep five-dims, lengths, "
+                                     "res guidance, fig-id pairing, svg font-size)")
+    add_file(sp)
+    sp.add_argument("--min-font-size", type=float, default=9.5,
+                    help="minimum svg font size in px (default 9.5)")
+    sp.set_defaults(fn=cmd_lint)
 
     args = p.parse_args()
     sys.exit(args.fn(args))

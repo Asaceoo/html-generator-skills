@@ -83,4 +83,31 @@
 - 篇章id：`cat1`~`catN`，通用基础子节id：`circuit`/`mech`/`plastic-qa`/`battery`等
 - 目录项描述附带该篇图示亮点（如"第1篇 蓝牙音箱（含3D爆炸图/喇叭剖面/信号链路）"）方便用户预览内容
 
+## 与 html-generator 的双 class 语义标记（互操作）
+
+模板采用**双 class 设计**：原有类（`.kp/.res/.deep` 等）负责视觉样式，追加的 html-generator 语义类（`card/callout/heading/paragraph/table/title/end_page`）供其转换脚本识别，使手册可**一键转 Word/PDF/Markdown**（走 html-generator 的 25 种 IR 转换管线）。
+
+**映射规范**：
+
+| 原类（样式） | 追加语义类（转换） | 完整写法 |
+|--------------|-------------------|----------|
+| body | `mode-doc` + `data-palette="ink-blue"` | `<body class="mode-doc" data-palette="ink-blue">` |
+| `.cover` | `title` | `<div class="cover title">` |
+| `.category-header h2` | `heading` data-level=1 | `<h2 class="heading" data-level="1">` |
+| `.block-title` | `heading` data-level=2 | `<div class="block-title heading" data-level="2">` |
+| `.kp` | `card` data-variant="kp" | `<div class="kp card" data-variant="kp">` |
+| `.kp-term` | `heading` data-level=3 | `<div class="kp-term heading" data-level="3">` |
+| `.kp-explain` | `paragraph` | `<div class="kp-explain paragraph">` |
+| `.deep` | `callout` data-variant="kp-deep" | `<div class="deep callout" data-variant="kp-deep">` |
+| `.res` | `callout` data-variant="resource" | `<div class="res callout" data-variant="resource">` |
+| `.tip` | `callout` data-variant="tip" | `<div class="tip callout" data-variant="tip">` |
+| `.warn` | `callout` data-variant="warning" | `<div class="warn callout" data-variant="warning">` |
+| `.danger` | `callout` data-variant="warning" | `<div class="danger callout" data-variant="warning">` |
+| `table` | `table`（天然同名） | `<table class="table">` |
+| `.toc ol` | `list` | `<ol class="toc-list list">` |
+| `footer` | `end_page` | `<footer class="end_page">` |
+| `.fig` | **不加**（含svg走chart_unknown三层降级：截图/提取/跳过） | `<div class="fig">` |
+
+**转换效果**（参照 html-generator 兼容性矩阵）：kp→无边框表格+shading、deep/res→底色左边框段落、heading→Heading1/2/3、table→Word Table、SVG图示→Playwright截图插入。**语义类无需在CSS中定义样式**（视觉由原类负责，转换器只识别class名）。既有未打通语义类的手册仍可转换（元素兜底为段落），如需卡片级保真可按上表批量补类。
+
 > AI生成
