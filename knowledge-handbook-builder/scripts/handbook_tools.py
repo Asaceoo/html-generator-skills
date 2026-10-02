@@ -12,7 +12,9 @@ Knowledge Handbook Tools (知识手册构建/编辑工具集)
   python handbook_tools.py stats     <html>              快速统计（kp/deep/svg/文件规模）
   python handbook_tools.py anchors   <html>              列出全部kp锚点（行号|格式|term|res书名）
   python handbook_tools.py dupres    <html>              检测书名重复与前缀冲突（锚点设计风险预警）
-  python handbook_tools.py lint     <html> [--min-font-size 9.5]  内容质量校验（deep五维/字数/指引/图号/字号）
+  python handbook_tools.py lint     <html> [--strict] [--min-font-size 9.5]
+                                    内容质量校验（基础：五维/字数/指引/图号/字号；
+                                    --strict 深度：条件表述/工程锚点/类比词/类比去重/长度上限）
   python handbook_tools.py dedup     <html> [--apply]    检测kp区域内重复deep块；--apply执行删除（保留第一个）
   python handbook_tools.py replace   <html> --old O --new N [--expect 1]
                                                           安全替换：锚点出现次数==expect才执行，否则拒绝并保持文件不变
@@ -264,14 +266,34 @@ def cmd_replace(args):
 
 DIM_CLASSES = ("assumption", "principle", "pro", "vivid", "ext")
 
+def _dim_contents(lines, dstart, dend):
+    """提取 deep 块内各维去标签文本：{维度名: 内容}"""
+    out = {}
+    for i in range(dstart, dend + 1):
+        m = re.match(r'\s*<div class="dim ([a-z]+)"><span class="dim-label">[^<]*</span>(.*?)</div>',
+                     lines[i])
+        if m:
+            out[m.group(1)] = re.sub(r'<[^>]+>', '', m.group(2)).strip()
+    return out
+
+def _common_frag(a, b, n=10):
+    """a 与 b 是否存在 ≥n 字的公共连续片段（类比重复检测）"""
+    if len(a) < n or len(b) < n:
+        return False
+    for i in range(len(a) - n + 1):
+        if a[i:i + n] in b:
+            return True
+    return False
+
 def cmd_lint(args):
-    """内容质量校验：deep五维齐全/字数下限/res指引/图号配对/SVG字号。只读，不改文件。"""
+    """内容质量校验：基础规则（默认）+ 深度规则（--strict，v1.2 写作规范）"""
     text = read_text(args.file)
     lines = split_lines(text)
     regions = find_kp_regions(lines)
     issues = []
+    suggest = 0
 
-    # [1] deep 五维齐全 + [2] dim 内容长度
+    # ---------- 基础规则 ----------
     deep_kp = 0
     for s, e in regions:
         dstart = next((i for i in range(s, e) if is_deep_line(lines[i])), None)
@@ -297,16 +319,14 @@ def cmd_lint(args):
                 if len(content) < 10:
                     issues.append(f"line {i + 1}: dim 内容过短({len(content)}字) kp[{kp_term(lines, s)}]")
 
-    # [3] kp-explain 长度（≥30字）
     for s, e in regions:
         joined = "\n".join(lines[s:e])
-        m = re.search(r'kp-explain">(.*?)</div>', joined, re.S)
+        m = re.search(r'kp-explain[^>]*>(.*?)</div>', joined, re.S)
         if m:
             content = re.sub(r'<[^>]+>', '', m.group(1)).strip()
             if len(content) < 30:
                 issues.append(f"kp[{kp_term(lines, s)}] explain 过短({len(content)}字)")
 
-    # [4] res 需含书籍与B站指引
     for s, e in regions:
         joined = "\n".join(lines[s:e])
         rm = re.search(r'class="[^"]*\bres\b[^"]*".*?</div>', joined, re.S)
@@ -316,7 +336,6 @@ def cmd_lint(args):
             if "B站" not in rm.group(0):
                 issues.append(f"kp[{kp_term(lines, s)}] res 缺B站视频指引")
 
-    # [5] svg 与 fig-caption 图号配对
     svgn = text.count("<svg")
     fig_ids = []
     for l in lines:
@@ -325,21 +344,64 @@ def cmd_lint(args):
     if svgn != len(fig_ids):
         issues.append(f"svg({svgn}) 与 fig-caption 图号({len(fig_ids)}) 不配对")
 
-    # [6] SVG 字号下限（默认 9.5px，--min-font-size 可调）
     min_fs = getattr(args, "min_font_size", 9.5)
     for m in re.finditer(r'<svg.*?</svg>', text, re.S):
-        for fm in re.finditer(r'font-size[:=]\s*"?(\d+(?:\.\d+)?)', m.group(0)):
-            if float(fm.group(1)) < min_fs:
-                issues.append(f"SVG font-size {fm.group(1)} < {min_fs}（需≥{min_fs}px）")
+        for fm in re.finditer(r'font-size[:=]\s*"?\d+(?:\.\d+)?', m.group(0)):
+            v = float(fm.group(0).replace("font-size", "").replace(":", "").replace("=", "").replace('"', "").strip())
+            if v < min_fs:
+                issues.append(f"SVG font-size {v} < {min_fs}（需≥{min_fs}px）")
 
-    print("== Knowledge Handbook Lint ==")
+    # ---------- 深度规则（--strict，v1.2 写作规范四要素/权重表）----------
+    strict = getattr(args, "strict", False)
+    if strict:
+        for s, e in regions:
+            dstart = next((i for i in range(s, e) if is_deep_line(lines[i])), None)
+            if dstart is None:
+                continue
+            dend = block_end(lines, dstart)
+            if dend < 0:
+                continue
+            dims = _dim_contents(lines, dstart, dend)
+            term = kp_term(lines, s)
+            joined = "\n".join(lines[s:e])
+            em = re.search(r'kp-explain[^>]*>(.*?)</div>', joined, re.S)
+            explain = re.sub(r'<[^>]+>', '', em.group(1)).strip() if em else ""
+            # [S1] assumption 必须有条件表述
+            a = dims.get("assumption", "")
+            if a and not re.search(r'——|若|如果|时|当|一旦|否则|不满足|违背', a):
+                issues.append(f"kp[{term}] assumption维缺条件表述（——/若/时/当/一旦）")
+            # [S2] principle 量化锚（争取A级）[SUGGEST 不计硬伤]
+            p = dims.get("principle", "")
+            if p and not re.search(r'∝|=|≥|≤|次方|正比|反比|定律|守恒|×|÷|%|倍|→', p):
+                issues.append(f"[SUGGEST] kp[{term}] principle维无量化词/定律锚（争取A级：∝/=/次方/定律名）")
+                suggest += 1
+            # [S3] pro 必须有工程锚点（数字/标准号；管理型可降档用方法论名词）
+            pr = dims.get("pro", "")
+            if pr and not re.search(r'\d|GB|IPC|ASTM|ISO|IEC|IEEE|JIS|DIN|UL ?9|EN ?1', pr) \
+                    and not re.search(r'流程|模板|步骤|评审|框架|矩阵|方法|清单|打分|面谈', pr):
+                issues.append(f"kp[{term}] pro维缺工程锚点（数字/标准号；管理型可用方法论名词）")
+            # [S4] vivid 必须有类比引导词
+            v = dims.get("vivid", "")
+            if v and not re.search(r'像|好比|相当于|如同|想象|仿佛|宛如|犹如', v):
+                issues.append(f"kp[{term}] vivid维缺类比引导词（像/好比/相当于/如同/想象）")
+            # [S5] vivid 与 explain 类比不得重复（≥10字公共片段）
+            if v and explain and _common_frag(v, explain, 10):
+                issues.append(f"kp[{term}] vivid与explain存在≥10字重复片段（两处类比必须差异化）")
+            # [S6] 单维超长（五维是密度块不是段落）
+            for cls, content in dims.items():
+                if len(content) > 150:
+                    issues.append(f"kp[{term}] {cls}维超长({len(content)}字>150)，建议精简")
+
+    hard = len(issues) - suggest
+    print("== Knowledge Handbook Lint" + (" (strict) " if strict else "") + "==")
     print(f"[1] deep five-dims: {deep_kp} kp checked")
     print(f"[2] svg/caption ids: {svgn} / {len(fig_ids)}")
     for it in issues:
-        print("  WARN " + it)
-    print(f"issues: {len(issues)}")
-    print("RESULT:", "PASS" if not issues else "WARN")
-    return 0 if not issues else 1
+        prefix = "  " if it.startswith("[SUGGEST]") else "  WARN "
+        print(prefix + it)
+    print(f"issues: {len(issues)}" + (f" (hard {hard} + suggest {suggest})" if strict else ""))
+    print("RESULT:", "PASS" if hard == 0 else "WARN")
+    return 0 if hard == 0 else 1
 
 # ---------------- CLI ----------------
 
@@ -382,6 +444,9 @@ def main():
     add_file(sp)
     sp.add_argument("--min-font-size", type=float, default=9.5,
                     help="minimum svg font size in px (default 9.5)")
+    sp.add_argument("--strict", action="store_true",
+                    help="deep quality checks (v1.2 writing rules: condition wording, "
+                         "engineering anchor, analogy marker, analogy dedup, dim length cap)")
     sp.set_defaults(fn=cmd_lint)
 
     args = p.parse_args()

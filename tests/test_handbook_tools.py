@@ -20,10 +20,10 @@ import handbook_tools as ht  # noqa: E402
 TEMPLATE = os.path.join(TOOLS_DIR, "..", "assets", "handbook-template.html")
 
 DEEP_BLOCK = '''    <div class="deep callout" data-variant="kp-deep">
-      <div class="dim assumption"><span class="dim-label">暗含假设：</span>假设条件成立的前提说明文字。</div>
+      <div class="dim assumption"><span class="dim-label">暗含假设：</span>假设条件成立的前提说明——违背前提时的失效模式描述。</div>
       <div class="dim principle"><span class="dim-label">第一性原理：</span>底层物理逻辑本质说明文字。</div>
-      <div class="dim pro"><span class="dim-label">专业解读：</span>行业标准与精确参数的说明文字。</div>
-      <div class="dim vivid"><span class="dim-label">形象化：</span>一个日常化的生活类比说明文字。</div>
+      <div class="dim pro"><span class="dim-label">专业解读：</span>行业标准GB/T 0000与参数值≥10的说明文字。</div>
+      <div class="dim vivid"><span class="dim-label">形象化：</span>像日常事物——要素映射关系的说明文字。</div>
       <div class="dim ext"><span class="dim-label">扩展：</span>进阶方向与行业趋势说明文字。</div>
     </div>
 '''
@@ -201,3 +201,56 @@ def test_lint_small_svg_font(tmp_path):
     p = make_html(tmp_path / "l4.html", bad_font=True)
     code, out = call("cmd_lint", p, min_font_size=9.5)
     assert code == 1 and "font-size 8" in out
+
+
+# ---------- lint --strict (v1.2 writing rules) ----------
+
+def test_lint_strict_pass(tmp_path):
+    """v1.2 规范夹具（含条件词/锚点/引导词/差异化类比）必须 strict 全绿"""
+    p = make_html(tmp_path / "sp.html")
+    code, out = call("cmd_lint", p, min_font_size=9.5, strict=True)
+    assert code == 0 and "PASS" in out and "hard 0" in out
+
+def test_lint_strict_analogy_marker(tmp_path):
+    p = make_html(tmp_path / "sm.html")
+    with io.open(p, encoding="utf-8", newline="") as f:
+        t = f.read()
+    t = t.replace("像日常事物——要素映射关系的说明文字。", "直接给出一个直白的类比句子而已。")
+    with io.open(p, "w", encoding="utf-8", newline="") as f:
+        f.write(t)
+    code, out = call("cmd_lint", p, min_font_size=9.5, strict=True)
+    assert code == 1 and "缺类比引导词" in out
+
+def test_lint_strict_pro_anchor(tmp_path):
+    p = make_html(tmp_path / "sa.html")
+    with io.open(p, encoding="utf-8", newline="") as f:
+        t = f.read()
+    t = t.replace("行业标准GB/T 0000与参数值≥10的说明文字。", "行业有一些约定俗成的规范做法。")
+    with io.open(p, "w", encoding="utf-8", newline="") as f:
+        f.write(t)
+    code, out = call("cmd_lint", p, min_font_size=9.5, strict=True)
+    assert code == 1 and "缺工程锚点" in out
+
+def test_lint_strict_analogy_dedup(tmp_path):
+    p = make_html(tmp_path / "sd.html")
+    with io.open(p, encoding="utf-8", newline="") as f:
+        t = f.read()
+    # 让 vivid 与 explain 出现≥10字重复片段
+    t = t.replace("像日常事物——要素映射关系的说明文字。",
+                  "像足够长的通俗解释内容，包含生活化类比说明，超过三十个字符的长度要求。")
+    with io.open(p, "w", encoding="utf-8", newline="") as f:
+        f.write(t)
+    code, out = call("cmd_lint", p, min_font_size=9.5, strict=True)
+    assert code == 1 and "重复片段" in out
+
+def test_lint_strict_suggest_not_hard(tmp_path):
+    """principle 无量化词应为 SUGGEST 级——不拉低 exit code 至 FAIL 以外的判定语义（hard 计数排除 suggest）"""
+    p = make_html(tmp_path / "ss.html")
+    with io.open(p, encoding="utf-8", newline="") as f:
+        t = f.read()
+    t = t.replace("底层物理逻辑本质说明文字。", "底层有一些逻辑上的传导关系描述。")
+    with io.open(p, "w", encoding="utf-8", newline="") as f:
+        f.write(t)
+    code, out = call("cmd_lint", p, min_font_size=9.5, strict=True)
+    # 唯一 issue 是 SUGGEST → hard=0 → RESULT PASS（exit 0），且输出明确分离 hard/suggest 计数
+    assert code == 0 and "[SUGGEST]" in out and "hard 0 + suggest 1" in out

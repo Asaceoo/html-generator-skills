@@ -8,7 +8,7 @@
 1. **自包含单文件HTML**（CSS内联、零外部依赖），工作区根目录交付
 2. **SVG图示**：矢量、不重叠、清晰标注、字体≥9.5px、图号+说明；按需含三维视角图（爆炸图/等轴测）
 3. **每个知识点七层结构**：术语标题 → 通俗解释（含生活化类比）→ 五维深度解读 → 推荐书籍 → B站视频搜索指引
-4. **五维深度解读**：暗含假设（红）/ 第一性原理（蓝）/ 专业解读（绿）/ 形象化（橙）/ 扩展（紫）
+4. **五维深度解读**：暗含假设（红）/ 第一性原理（蓝）/ 专业解读（绿）/ 形象化（橙）/ 扩展（紫）——**写作四要素（目标/句式骨架/质量标准/正反例）与知识类型权重表见 `references/html-structure.md`（v1.2）**
 5. **知识体系有逻辑**：通用基础 → 品类篇章 → 综合实战；模块编号与目录锚点同步
 6. **互操作**（模板默认启用）：结构挂 html-generator 双 class（语义类），手册可一键转 Word/PDF/Markdown
 
@@ -40,7 +40,7 @@
 
 ```bash
 python scripts/handbook_tools.py validate  <手册.html>            # 结构验证（6项）
-python scripts/handbook_tools.py lint      <手册.html>            # 内容质量校验（五维/字数/指引/图号/字号）
+python scripts/handbook_tools.py lint      <手册.html> [--strict]  # 内容质量校验（基础+--strict深度：条件表述/工程锚点/类比词/类比去重/长度上限）
 python scripts/handbook_tools.py stats     <手册.html>            # 快速统计
 python scripts/handbook_tools.py anchors   <手册.html>            # 列出kp锚点（行号|格式|term|书名）
 python scripts/handbook_tools.py dupres    <手册.html>            # 书名重复/前缀冲突预警
@@ -71,7 +71,7 @@ python scripts/handbook_tools.py replace   <手册.html> --old-file a.txt --new-
 3. deep块数 = kp数，dim行数 = 5×kp数，无任何kp区域含>1个deep
 4. SVG总数与图号caption清单一致、编号无缺口
 5. `</html>` 闭合存在
-6. lint：deep五维齐全 / dim≥10字 / explain≥30字 / res含书籍与B站 / SVG字号≥9.5
+6. lint：deep五维齐全 / dim≥10字 / explain≥30字 / res含书籍与B站 / SVG字号≥9.5；**新写手册建议 `--strict` 硬伤为0**（principle量化锚为SUGGEST级，鼓励A级：∝/=/次方/定律名）
 7. 封面副标题与页脚统计同步更新
 
 > AI生成
