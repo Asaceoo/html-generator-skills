@@ -21,6 +21,7 @@ Knowledge Handbook Tools (知识手册构建/编辑工具集)
   python handbook_tools.py crossref  <html>              知识点关联：共享书籍/B站词的kp对
   python handbook_tools.py path      <html>              学习路径：按category结构输出基础→进阶→实战
   python handbook_tools.py coverage  <html>              知识覆盖检查：类型分布/偏科/产业链盲区（v1.4.1）
+  python handbook_tools.py termcheck <html>              术语一致性：term包含/标准型缺标准号/标准号清单（v1.4.2）
   python handbook_tools.py replace   <html> --old O --new N [--expect 1]
                                                           安全替换：锚点出现次数==expect才执行，否则拒绝并保持文件不变
   python handbook_tools.py replace   <html> --old-file f --new-file f
@@ -406,6 +407,52 @@ def cmd_coverage(args):
         print("  无带 deep 的知识点可判定")
     return 0
 
+
+def cmd_termcheck(args):
+    """术语一致性检查（v1.4.2）：term 包含关系（重复/从属）+ 标准型缺标准号 + 标准号清单。"""
+    text = read_text(args.file)
+    lines = split_lines(text)
+    regions = find_kp_regions(lines)
+    terms = []
+    for s, e in regions:
+        t = kp_term(lines, s)
+        dstart = next((i for i in range(s, e) if is_deep_line(lines[i])), None)
+        pro = ""
+        if dstart is not None:
+            dend = block_end(lines, dstart)
+            if dend >= 0:
+                dims = _dim_contents(lines, dstart, dend)
+                pro = dims.get("pro", "")
+        terms.append((t, pro, s + 1))
+    print(f"== 术语一致性检查（{len(terms)} 个知识点）==")
+    # 1. term 包含关系（重复/从属提示）
+    subs = []
+    for i in range(len(terms)):
+        for j in range(len(terms)):
+            if i != j and terms[i][0] and terms[j][0] and terms[i][0] in terms[j][0]:
+                subs.append((terms[i], terms[j]))
+    if subs:
+        for a, b in subs:
+            print(f"  ⚠️ 「{a[0]}」是「{b[0]}」的子串（可能重复或从属，请确认是否合并/统一术语）")
+    else:
+        print("  OK: 无 term 包含关系")
+    # 2. 标准型 kp 缺标准号（专业关联缺口）
+    stds_all = set()
+    missing = []
+    for t, pro, ln in terms:
+        stds = re.findall(r'\b(?:GB|GB/T|ISO|IEC|EN|ASTM|UL|IPC|JIS|DIN)\s?[\d.]+(?:\.[\d.]+)*', pro)
+        stds_all.update(stds)
+        if _detect_ktype(pro) == "标准型" and not stds:
+            missing.append((ln, t))
+    if missing:
+        for ln, t in missing:
+            print(f"  ⚠️ L{ln}「{t}」判定标准型但 pro 维无标准号（建议关联标准号）")
+    else:
+        print("  OK: 标准型 kp 均有关联标准号")
+    # 3. 标准号清单（去重，全面性参考）
+    print("  标准号清单（%d 个，去重）: %s" % (len(stds_all), "、".join(sorted(stds_all)) if stds_all else "无"))
+    return 0
+
 def cmd_replace(args):
     old = args.old if args.old is not None else (read_text(args.old_file) if args.old_file else None)
     new = args.new if args.new is not None else (read_text(args.new_file) if args.new_file else None)
@@ -457,7 +504,7 @@ def _detect_ktype(pro):
     if re.search(r'\b(?:GB|GB/T|ISO|IEC|EN|ASTM|UL|IPC|JIS|DIN)\s?[\d.]', pro):
         score["标准型"] += 1
     if re.search(r'标准|条款|适用范围|偏差|公差|等级|试验方法|测量点', pro):
-        score["标准型"] += 2
+        score["标准型"] += 3
     if re.search(r'流程|模板|步骤|评审|框架|矩阵|清单|打分|面谈|方法|团队', pro):
         score["管理型"] += 2
     if all(v == 0 for v in score.values()):
@@ -598,6 +645,34 @@ def cmd_lint(args):
                         "管理型": "专业解读用方法论要点；形象化用场景类比"}
                 issues.append(f"[SUGGEST] kp[{term}] 疑似{ktype}——{tips[ktype]}（权重表见 html-structure.md）")
                 suggest += 1
+        # [S9] 数值对账：同标准号跨 kp 数值一致性（v1.4.2）[SUGGEST 不计硬伤]
+        std_nums = {}
+        for s, e in regions:
+            dstart = next((i for i in range(s, e) if is_deep_line(lines[i])), None)
+            if dstart is None:
+                continue
+            dend = block_end(lines, dstart)
+            if dend < 0:
+                continue
+            dims = _dim_contents(lines, dstart, dend)
+            pro = dims.get("pro", "")
+            stds = re.findall(r'\b(?:GB|GB/T|ISO|IEC|EN|ASTM|UL|IPC|JIS|DIN)\s?[\d.]+(?:\.[\d.]+)*', pro)
+            nums = re.findall(r'\d+(?:\.\d+)?\s*(?:mm|%|℃|MPa|kg|年|天|次|倍)', pro)
+            for st in stds:
+                std_nums.setdefault(st, []).append((kp_term(lines, s), nums))
+        for st, entries in std_nums.items():
+            if len(entries) < 2:
+                continue
+            by_unit = {}
+            for t, ns in entries:
+                for n in ns:
+                    m = re.search(r'(mm|%|℃|MPa|kg|年|天|次|倍)$', n)
+                    by_unit.setdefault(m.group(1) if m else "raw", set()).add(n)
+            for u, vals in by_unit.items():
+                if len(vals) > 1:
+                    kps = "、".join(t for t, _ in entries)
+                    issues.append(f"[SUGGEST] 标准号 {st} 跨 kp 数值不一致（{u}）：{' / '.join(sorted(vals))}（涉及：{kps}）")
+                    suggest += 1
         # [S7] kp 图示覆盖率（图示配文要求：每 kp ≥1 图）[SUGGEST 不计硬伤]
         kp_with_fig = 0
         for s, e in regions:
@@ -656,6 +731,9 @@ def main():
 
     sp = sub.add_parser("coverage", help="knowledge coverage check: type distribution + chain gaps")
     add_file(sp); sp.set_defaults(fn=cmd_coverage)
+
+    sp = sub.add_parser("termcheck", help="terminology check: term containment + std-type missing std")
+    add_file(sp); sp.set_defaults(fn=cmd_termcheck)
 
     sp = sub.add_parser("dedup", help="detect/remove duplicate deep blocks in kp regions")
     add_file(sp); sp.add_argument("--apply", action="store_true",
