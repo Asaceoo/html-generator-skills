@@ -22,6 +22,7 @@ Knowledge Handbook Tools (知识手册构建/编辑工具集)
   python handbook_tools.py path      <html>              学习路径：按category结构输出基础→进阶→实战
   python handbook_tools.py coverage  <html>              知识覆盖检查：类型分布/偏科/产业链盲区（v1.4.1）
   python handbook_tools.py termcheck <html>              术语一致性：term包含/标准型缺标准号/标准号清单（v1.4.2）
+  python handbook_tools.py sources   <html>              调研说明附录：证据分布/来源清单/存疑项/kp元数据（v1.4.3）
   python handbook_tools.py replace   <html> --old O --new N [--expect 1]
                                                           安全替换：锚点出现次数==expect才执行，否则拒绝并保持文件不变
   python handbook_tools.py replace   <html> --old-file f --new-file f
@@ -453,6 +454,77 @@ def cmd_termcheck(args):
     print("  标准号清单（%d 个，去重）: %s" % (len(stds_all), "、".join(sorted(stds_all)) if stds_all else "无"))
     return 0
 
+
+def cmd_sources(args):
+    """调研说明附录生成（v1.4.3）：证据级别分布 + 来源清单（标准号/书籍去重）+ 存疑项 + kp 元数据覆盖率。"""
+    text = read_text(args.file)
+    lines = split_lines(text)
+    regions = find_kp_regions(lines)
+    ev = {"A": 0, "B": 0, "C": 0, "pending": 0}
+    for l in lines:
+        if "ev-a" in l:
+            ev["A"] += 1
+        if "ev-b" in l:
+            ev["B"] += 1
+        if "ev-c" in l:
+            ev["C"] += 1
+        if "ev-pending" in l or "🔎待核实" in l:
+            ev["pending"] += 1
+    total_ev = ev["A"] + ev["B"] + ev["C"] + ev["pending"]
+    print("== 调研说明附录（sources 自动生成）==")
+    if total_ev:
+        parts = []
+        for k in ("A", "B", "C"):
+            if ev[k]:
+                parts.append(f"{k}级 {ev[k]} ({ev[k] * 100 // total_ev}%)")
+        if ev["pending"]:
+            parts.append(f"🔎待核实 {ev['pending']}")
+        print("[1] 证据级别分布: " + " / ".join(parts))
+    else:
+        print("[1] 证据级别分布: 未标注（建议对关键数据加 A/B/C 色标）")
+    books = set()
+    stds = set()
+    for s, e in regions:
+        dstart = next((i for i in range(s, e) if is_deep_line(lines[i])), None)
+        if dstart is not None:
+            dend = block_end(lines, dstart)
+            if dend >= 0:
+                dims = _dim_contents(lines, dstart, dend)
+                pro = dims.get("pro", "")
+                stds.update(re.findall(r'\b(?:GB|GB/T|ISO|IEC|EN|ASTM|UL|IPC|JIS|DIN)\s?[\d.]+(?:\.[\d.]+)*', pro))
+        book, _, _ = kp_res(lines, s, e)
+        if book and book != "?":
+            books.add(book)
+    print("[2] 来源清单（去重）:")
+    if stds:
+        print("  标准号: " + "、".join(sorted(stds)))
+    if books:
+        print("  书籍: " + "、".join(sorted(books)))
+    if not stds and not books:
+        print("  （无）")
+    pending = []
+    for s, e in regions:
+        joined = "\n".join(lines[s:e])
+        if "ev-c" in joined or "ev-pending" in joined or "待联网核实" in joined or "待核实" in joined:
+            pending.append((s + 1, kp_term(lines, s)))
+    if pending:
+        print("[3] 存疑项（C级/待核实）:")
+        for ln, t in pending:
+            print(f"  L{ln}「{t}」")
+    else:
+        print("[3] 存疑项: 无（无 C 级/待核实标记）")
+    print("[4] 未覆盖项: 由 Phase 1 广度矩阵盲区清单人工填写（附录 §四）")
+    total = len(regions)
+    with_ts = 0
+    for s, e in regions:
+        for i in range(s, min(e, s + 4)):
+            if "data-updated" in lines[i]:
+                with_ts += 1
+                break
+    pct = with_ts * 100 // total if total else 0
+    print(f"[5] kp 元数据: data-updated {with_ts}/{total} ({pct}%)")
+    return 0
+
 def cmd_replace(args):
     old = args.old if args.old is not None else (read_text(args.old_file) if args.old_file else None)
     new = args.new if args.new is not None else (read_text(args.new_file) if args.new_file else None)
@@ -734,6 +806,9 @@ def main():
 
     sp = sub.add_parser("termcheck", help="terminology check: term containment + std-type missing std")
     add_file(sp); sp.set_defaults(fn=cmd_termcheck)
+
+    sp = sub.add_parser("sources", help="research-appendix generator: evidence dist / source list / pending / kp meta")
+    add_file(sp); sp.set_defaults(fn=cmd_sources)
 
     sp = sub.add_parser("dedup", help="detect/remove duplicate deep blocks in kp regions")
     add_file(sp); sp.add_argument("--apply", action="store_true",

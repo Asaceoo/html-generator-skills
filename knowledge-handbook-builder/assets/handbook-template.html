@@ -57,6 +57,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .res .rlabel{color:var(--purple);font-weight:700;margin-right:4px}
 .res .book{display:inline;margin-right:10px}
 .res .vid{display:inline}
+/* 证据级别色标（v1.4.2：置信度可视化，A绿/B黄/C灰/待核实红） */
+.ev{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:6px;vertical-align:1px}
+.ev-a{color:#15803d;background:#dcfce7;border:1px solid #bbf7d0}
+.ev-b{color:#a16207;background:#fef9c3;border:1px solid #fef08a}
+.ev-c{color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb}
+.ev-pending{color:#b91c1c;background:#fee2e2;border:1px solid #fecaca}
 /* 图示 */
 .fig{margin:18px 0;padding:16px 12px;background:#fff;border:1px solid var(--border);border-radius:10px}
 .fig svg{max-width:100%;height:auto;display:block;margin:0 auto}
@@ -117,7 +123,7 @@ svg .hot{fill:#dc2626;font-weight:700}
     <div class="block-title heading" data-level="2">0.1 {{子模块标题}}</div>
 
     <!-- 多行格式知识点示例（完整七层结构，双class：kp+card / term+heading / explain+paragraph） -->
-    <div class="kp card" data-variant="kp">
+    <div class="kp card" data-variant="kp" data-updated="YYYY-MM-DD">
       <div class="kp-term heading" data-level="3">{{知识点标题}}</div>
       <div class="kp-explain paragraph">{{通俗解释：先专业定义，再"好比/相当于"生活化类比收尾，150-200字，关键词用strong}}</div>
       <div class="deep callout" data-variant="kp-deep">
@@ -127,7 +133,7 @@ svg .hot{fill:#dc2626;font-weight:700}
         <div class="dim vivid"><span class="dim-label">形象化：</span>{{一个日常类比，20-40字}}</div>
         <div class="dim ext"><span class="dim-label">扩展：</span>{{进阶方向/行业趋势/相邻标准}}</div>
       </div>
-      <div class="res callout" data-variant="resource"><span class="rlabel">书籍：</span><span class="book">《{{真实书名}}》{{作者/出版社}}——{{一句话定位}}</span><span class="rlabel">B站：</span><span class="vid">搜索「{{关键词1}}」「{{关键词2}}」</span></div>
+      <div class="res callout" data-variant="resource"><span class="rlabel">书籍：</span><span class="book">《{{真实书名}}》{{作者/出版社}}——{{一句话定位}}</span><span class="rlabel">B站：</span><span class="vid">搜索「{{关键词1}}」「{{关键词2}}」</span><span class="ev ev-a">A级</span><!-- 证据级别色标：A绿/B黄/C灰/待核实红，见 html-structure.md §证据级别标注 --></div>
     </div>
 
     <!-- 图示：含 svg 的容器无需语义类，转换脚本按 svg 特征走 chart_unknown 三层降级（截图/提取/跳过） -->
@@ -155,7 +161,7 @@ svg .hot{fill:#dc2626;font-weight:700}
     <div class="block-title heading" data-level="2">一、{{节标题}}</div>
 
     <!-- 单行格式知识点示例（批量追加效率高，同样带双class） -->
-    <div class="kp card" data-variant="kp"><div class="kp-term heading" data-level="3">{{标题}}</div><div class="kp-explain paragraph">{{解释}}</div>
+    <div class="kp card" data-variant="kp" data-updated="YYYY-MM-DD"><div class="kp-term heading" data-level="3">{{标题}}</div><div class="kp-explain paragraph">{{解释}}</div>
     <div class="deep callout" data-variant="kp-deep">
       <div class="dim assumption"><span class="dim-label">暗含假设：</span>…</div>
       <div class="dim principle"><span class="dim-label">第一性原理：</span>…</div>
@@ -186,6 +192,26 @@ svg .hot{fill:#dc2626;font-weight:700}
     <table class="table">
       <tr><th>方向</th><th>书名</th><th>作者</th><th>核心</th></tr>
     </table>
+  </div>
+</div>
+
+
+<!-- ================= 附录：调研说明（可靠性边界，v1.4.3） ================= -->
+<div class="category" id="appendix-research">
+  <div class="category-header">
+    <div class="category-num">附</div>
+    <h2 class="heading" data-level="1">附录：调研说明（可靠性边界）</h2>
+    <span class="category-tag">证据分级透明 · 来源可追溯 · 存疑可见</span>
+  </div>
+  <div class="knowledge-block">
+    <h3 class="heading" data-level="2">一、调研方法</h3>
+    <p class="paragraph">{{证据分级占比：A级 X / B级 Y / C级 Z / 🔎待核实 W（由 sources 命令生成，见各 kp res 块色标）}}</p>
+    <h3 class="heading" data-level="2">二、来源清单（A/B 级去重）</h3>
+    <p class="paragraph">{{标准号与书籍去重列表，由 sources 命令生成}}</p>
+    <h3 class="heading" data-level="2">三、存疑项</h3>
+    <p class="paragraph">{{C级/待核实数据清单，由 sources 命令生成；决策前建议核实}}</p>
+    <h3 class="heading" data-level="2">四、未覆盖项</h3>
+    <p class="paragraph">{{Phase 1 广度矩阵盲区现状，人工确认填写}}</p>
   </div>
 </div>
 

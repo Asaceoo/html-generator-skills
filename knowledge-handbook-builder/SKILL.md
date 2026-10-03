@@ -29,6 +29,7 @@ description_cn: 深度调研任意领域，生成含SVG图示、五维深度解�
 - **内容增值 v1.4**：`glossary` 术语表 / `quiz` 考点卡片 / `crossref` 知识点关联 / `path` 学习路径；`lint --strict` 自动判定知识类型（工艺/标准/管理/概念）
 - **调研深度广度 v1.4.1**：Phase 1 广度扫描矩阵（类型/产业链/竞品/标准/来源）+ 证据分级（A/B/C，双源须不同渠道）+ 深度五问 + 调研产出清单；`coverage` 命令查类型偏科与产业链盲区
 - **置信度与一致性 v1.4.2**：证据级别可视化（A绿/B黄/C灰/🔎待核实色标）；`termcheck` 术语一致性；lint --strict S9 同标准号跨 kp 数值对账
+- **调研说明附录 v1.4.3**：`sources` 命令生成附录四要素（证据占比/来源清单/存疑项/未覆盖项），可靠性边界固化进成品；kp 带 `data-updated` 元数据
 - **每 kp 配图**：每个知识点必须配 ≥1 张适合的 SVG（13 类图型选型提示词见 `references/svg-guide.md`），`lint --strict` 校验图示覆盖率
 - **跨平台零依赖**：Python 3.8+ 标准库；LF/CRLF 自动兼容
 
@@ -48,6 +49,6 @@ description_cn: 深度调研任意领域，生成含SVG图示、五维深度解�
 | `references/svg-guide.md` | 13类图型模式+等轴测坐标公式+防重叠规则 |
 | `references/editing-safety.md` | 编辑防错工程（事故案例与解法） |
 | `assets/handbook-template.html` | 手册骨架模板（含语义class，可直接转换） |
-| `scripts/handbook_tools.py` | 跨平台工具：validate/lint/stats/anchors/dupres/dedup/replace |
+| `scripts/handbook_tools.py` | 跨平台工具（14 命令）：validate/lint/stats/anchors/dupres/dedup/replace/glossary/quiz/crossref/path/coverage/termcheck/sources |
 | `scripts/mcp_server.py` | MCP服务器封装（需 fastmcp） |
 | `AGENT.md` | 通用智能体接入文档 |

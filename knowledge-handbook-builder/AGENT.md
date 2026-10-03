@@ -25,6 +25,7 @@ python scripts/handbook_tools.py crossref  <手册.html>            # 相关知�
 python scripts/handbook_tools.py path      <手册.html>            # 学习路径：基础→进阶→实战
 python scripts/handbook_tools.py coverage  <手册.html>            # 知识覆盖检查：类型分布/偏科/产业链盲区
 python scripts/handbook_tools.py termcheck <手册.html>            # 术语一致性：term包含/标准型缺标准号
+python scripts/handbook_tools.py sources   <手册.html>            # 调研说明附录：证据分布/来源清单/存疑项/kp元数据
 ```
 （长中文内容走文件通道，规避 shell 引号转义）
 
@@ -46,6 +47,10 @@ python scripts/mcp_server.py          # stdio 传输
 ```
 暴露工具：`validate_handbook` / `handbook_stats` / `extract_anchors` / `duplicate_res_check` / `dedup_deep_blocks` / `safe_replace`。
 
+## 一之补：入口澄清协议（先问再动）
+
+用户指令不明确时先答三问再动手：①手册路径（未给先问/列候选手册）②意图（新建/增量/仅检查）③范围（用 coverage/termcheck/lint 暴露的薄弱点生成建议清单供确认）。三问未答前最多只读探查，不做写入。
+
 ## 二、核心流程
 
 **全部工作流内容（交付标准 / 五阶段 / 增量增强 / 编辑铁律 / 验证清单）见 `references/workflow.md`（唯一数据源）**，要点速览：
@@ -65,7 +70,7 @@ python scripts/mcp_server.py          # stdio 传输
 | `references/svg-guide.md` | 13类图型模式 + 等轴测坐标公式 + 防重叠规则 |
 | `references/editing-safety.md` | 编辑防错工程（真实事故案例与解法） |
 | `assets/handbook-template.html` | 手册骨架模板（含语义class） |
-| `scripts/handbook_tools.py` | 跨平台核心工具（validate/lint/stats/anchors/dupres/dedup/replace） |
+| `scripts/handbook_tools.py` | 跨平台核心工具（14 命令：validate/lint/stats/anchors/dupres/dedup/replace/glossary/quiz/crossref/path/coverage/termcheck/sources） |
 | `scripts/mcp_server.py` | MCP 服务器封装（需 fastmcp） |
 
 > AI生成

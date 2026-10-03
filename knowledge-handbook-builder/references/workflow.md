@@ -11,6 +11,17 @@
 4. **五维深度解读（基线）**：暗含假设（红）/ 第一性原理（蓝）/ 专业解读（绿）/ 形象化（橙）/ 扩展（紫）——**写作四要素（目标/句式骨架/质量标准/正反例）、知识类型权重表、可选维池四要素见 `references/html-structure.md`（v1.3）**
 5. **知识体系有逻辑**：通用基础 → 品类篇章 → 综合实战；模块编号与目录锚点同步
 6. **互操作**（模板默认启用）：结构挂 html-generator 双 class（语义类），手册可一键转 Word/PDF/Markdown
+7. **调研说明附录（v1.4.3）**：手册结尾含「附录：调研说明」（调研方法/来源清单/存疑项/未覆盖项），前两要素由 `sources` 命令生成，未覆盖项人工确认
+
+## 入口澄清协议（先问再动）
+
+用户指令不明确时，**先答三问再动手**，禁止未确认就重建已有手册：
+
+1. **手册路径**？未给 → 先问或列出候选手册（工作区 *.html）
+2. **意图**？新建全量手册 / 增量增强已有手册 / 仅检查评估？未说明 → 先问
+3. **范围**？本轮加什么内容 / 改进哪个方向？未说明 → 用 `coverage`/`termcheck`/`lint --strict` 暴露的薄弱点（类型偏科/术语重复/数值矛盾/图示覆盖率）生成"建议改进清单"供用户确认
+
+三问未答前，最多执行只读探查（stats/anchors/lint），不做任何写入。
 
 ## 五阶段工作流
 
@@ -67,6 +78,7 @@ python scripts/handbook_tools.py crossref  <手册.html>            # 知识点�
 python scripts/handbook_tools.py path      <手册.html>            # 学习路径：基础→进阶→实战建议
 python scripts/handbook_tools.py coverage  <手册.html>            # 知识覆盖检查：类型分布/偏科/产业链盲区（v1.4.1）
 python scripts/handbook_tools.py termcheck <手册.html>            # 术语一致性：term包含/标准型缺标准号/标准号清单（v1.4.2）
+python scripts/handbook_tools.py sources   <手册.html>            # 调研说明附录：证据分布/来源清单/存疑项/kp元数据（v1.4.3）
 ```
 
 ## 增量增强模式（手册已存在时）
@@ -93,5 +105,37 @@ python scripts/handbook_tools.py termcheck <手册.html>            # 术语一�
 5. `</html>` 闭合存在
 6. lint：基线五维齐全 + 可选维0-2合法 / dim≥10字 / explain≥30字 / res含书籍与B站 / SVG字号≥9.5；**新写手册建议 `--strict` 硬伤为0**（principle量化锚、kp图示覆盖率<80%为SUGGEST级）
 7. 封面副标题与页脚统计同步更新
+8. 调研说明附录存在（appendix-research category；`sources` 四要素已填充，未覆盖项已人工确认）
+
+## Phase 5 收敛技巧与 lint 误报识别（v1.4.3 实战补充）
+
+**两类不必修的 SUGGEST（识别出来，省掉无效返工）**
+
+1. `疑似概念型/工艺型/标准型/管理型——…`：**逐 kp 必出**（N 个 kp 就是 N 条），是写作重点提示而非缺陷，lint 按设计输出。不要试图"清零"它。
+2. `标准号 X 跨 kp 数值不一致`：数值来自**不同标准口径**时是误报。例：承重 22kg（GB/T 14748-2025）vs 15kg（EN 1888-1）；动态耐久 36000+12000（GB）vs 72000+24000（EN 1888）vs 72000（ISO 31110）。**前提是正文已给每个数值标注标准号**。只有当同一标准号在同一口径下出现两个值才需要改。
+
+**两个易误判的结构信号**
+
+- 分部文件报 `open/close 差 1（EXTRA CLOSE）`：骨架通常打开 `<div class="container">` 且不关闭（净留 1 个），由最后一个分部收尾。**合并后 div 平衡 = 0 即正常**，不要删那个收尾标签。
+- `fig-caption` 计数比 SVG 多 2：手工 `str.count("fig-caption")` 会把 CSS 与正文提及一起算进去，以 `validate` 输出的 `svg count / unique fig ids` 为准。
+
+**批量修 lint 硬伤的推荐手法（比多次 Edit 稳）**
+
+一次性写 `_fix_*.py`，用脚本 API 定位后整行替换：
+
+```python
+sys.path.insert(0, "<skill>/scripts"); import handbook_tools as H
+regions = H.find_kp_regions(lines)          # 按 kp 区域遍历
+term    = H.kp_term(lines, s)               # 取标题做定位锚
+# 在 [s,e) 内找 'class="dim pro"' / 'class="dim principle"' 的那一行，整行替换
+```
+
+硬约束：命中数 `!= 1` 立即报错退出（原子，不写盘）；新文案先自检 `len <= 150` 且含锚点符号，不满足直接退出。
+
+- pro 维工程锚点正则：`\d` 或 `GB|IPC|ASTM|ISO|IEC|IEEE|JIS|DIN|UL ?9|EN ?1`；管理型可降档用 `流程|模板|步骤|评审|框架|矩阵|方法|清单|打分|面谈`。
+  - 最省事且真实的两招：把标准号写进句子（如 `GB/T 43839-2024` 自带数字）；给方法论动作加量化门槛（`样本 ≥300 条`、`1 页 A4 + 附录 ≤5 页`）。
+- principle 维量化锚正则：`∝ = ≥ ≤ 次方 正比 反比 定律 守恒 × ÷ % 倍 →`。
+  - **注意 `⊇` 和 `⇒` 不在该正则里**，写了也不会被判为锚点，别指望它们过关。
+- 改完必须 `validate` + `lint --strict` 双跑复核，只看一次不够（第二处修改可能引入新问题）。
 
 > AI生成
