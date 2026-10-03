@@ -1,0 +1,9 @@
+﻿timestamp	commit	skill	round	old_score	new_score	status	dim_changed	delta	note	eval_mode	judge_count
+2026-10-03T03:52	-	knowledge-handbook-builder	0	75.4	75.4	baseline	-	0	首次审查：dim4=0(无检查点)、dim8=3.95(dry_run降权)、dim1=9(description贴边1023/1024)、replace缺参崩溃P1缺陷	dry_run	1
+2026-10-03T04:00	-	knowledge-handbook-builder	1	75.4	82.0	keep	dim4(+10),dim2(+0.5)	+6.6	workflow.md插入5处检查点(2 STOP+3 CHECKPOINT)，独立子agent重评dim4=10/dim2=8.5，无副作用	dry_run	1
+2026-10-03T04:04	-	knowledge-handbook-builder	2	82.0	82.5	keep	dim8(+0.25)	+0.5	handbook_tools.py修复replace缺参崩溃(read_text(None)→前置校验exit2)，真机验证缺参exit2/回归exit0+2	fallback_dry	1
+2026-10-03T04:06	-	knowledge-handbook-builder	3	82.5	82.7	keep	dim8(+0.2)	+0.2	handbook_tools.py docstring补充exit code语义区分(validate=FAIL/lint=WARN/dupres=报告)；连续2轮Δ<2触顶break	fallback_dry	1
+2026-10-03T13:35	-	knowledge-handbook-builder	4	82.7	83.3	baseline	-	+0.6	第二轮鲁班审查(v1.4.2)：功能扩展后重评基线；dim8=3.67(dry_run降权,子agent原始8a7.0/8b8.5/8c5.5)、dim7b=8.3(Distill 8个extbak噪音)	dry_run	1
+2026-10-03T13:38	-	knowledge-handbook-builder	5	83.3	84.0	keep	dim8(+0.8)	+0.7	Round1(dim8)：入口澄清协议(三问：路径/意图/范围；未答前只读不写)加入 workflow.md+AGENT.md；独立子agent重评p3歧义场景 4.0→9.0	dry_run	1
+2026-10-03T13:44	-	knowledge-handbook-builder	6	84.0	85.0	keep	dim7b(+0.7),dim8(8c+2.0)	+1.0	Round2(dim7b)：目录卫生清理(17+3备份/评测文件归档 luban-backups-archive)；Distill p0 8→0、SkillOps 全绿；8c副作用 5.5→7.5	dry_run	1
+2026-10-03T13:47	-	knowledge-handbook-builder	7	85.0	85.1	keep	dim6(+1.5),dim7b(+0.5)	+0.1	Round3(dim6)：SKILL.md命令清单7→13补全+AGENT.md资源索引同步；连续2轮Δ<2触顶break；ROI基线85.1≥85且最低维≥7 下一轮可跳过	dry_run	1

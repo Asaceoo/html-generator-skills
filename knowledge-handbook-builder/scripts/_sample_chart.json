@@ -1,0 +1,1 @@
+{"id": "sample", "type": "bar", "title": "样例", "width": 920, "height": 352, "yLabel": "占比 %", "xLabel": "价格带", "categories": ["<600元", "800–1200元", "799–2188元", ">2188元"], "series": [{"name": "销量占比", "data": [53.9, 37.0, 18.4, 5.3], "format": 1}, {"name": "销售额占比", "data": [26.9, 23.0, 38.5, 26.9], "format": 1}]}

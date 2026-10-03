@@ -23,6 +23,9 @@ Knowledge Handbook Tools (知识手册构建/编辑工具集)
   python handbook_tools.py coverage  <html>              知识覆盖检查：类型分布/偏科/产业链盲区（v1.4.1）
   python handbook_tools.py termcheck <html>              术语一致性：term包含/标准型缺标准号/标准号清单（v1.4.2）
   python handbook_tools.py sources   <html>              调研说明附录：证据分布/来源清单/存疑项/kp元数据（v1.4.3）
+  python handbook_tools.py svgcheck  <html> [--engine static|node] [--tolerance 2]
+                                    SVG几何硬闸门（v1.5）：文字越界/重叠/小字=阻断(exit 1)，覆盖率=建议
+                                    --engine node 走 Playwright 真实渲染几何（需 Node 环境，精度高）
   python handbook_tools.py replace   <html> --old O --new N [--expect 1]
                                                           安全替换：锚点出现次数==expect才执行，否则拒绝并保持文件不变
   python handbook_tools.py replace   <html> --old-file f --new-file f
@@ -34,7 +37,7 @@ Knowledge Handbook Tools (知识手册构建/编辑工具集)
   3. 自动兼容 LF / CRLF 行尾（LF 锚点可直接匹配 CRLF 文件）
   4. 写回保持 UTF-8 无 BOM，不改变文件原有行尾风格
 退出码：0=成功；1=验证/检查发现问题；2=锚点未找到；3=锚点出现次数与预期不符
-语义区分：validate 的 exit 1=结构 FAIL（必须修复才能交付）；lint 的 exit 1=内容 WARN（质量警告，可修复后重跑）；dupres/dedup 的 exit 1=检测到潜在问题（dry-run 报告）。agent 按状态码分支时以各命令输出文案为准。
+语义区分：validate 的 exit 1=结构 FAIL（必须修复才能交付）；lint 的 exit 1=内容 WARN（质量警告，可修复后重跑）；dupres/dedup 的 exit 1=检测到潜在问题（dry-run 报告）；svgcheck 的 exit 1=几何硬伤 FAIL（越界/重叠/小字，必须修复才能交付）。agent 按状态码分支时以各命令输出文案为准。
 """
 
 import argparse
@@ -592,6 +595,299 @@ def _common_frag(a, b, n=10):
             return True
     return False
 
+
+# ============ svgcheck：SVG 图示几何校验（v1.5） ============
+# 背景（2026-10-03 真机普查实测）：12 本手册 341 图中，validate/lint 全绿状态下
+# 仍存在 221 处文字越界 + 105 处文字重叠。根因是 validate/lint 都不做几何检查。
+# 本命令补上这一层，且区分严重度：重叠/越界 = 阻断（exit 1），覆盖率 = 建议。
+
+# CJK 字宽近似系数（相对 font-size）。中文全角约 1.0em，ASCII 约 0.52em。
+# 用于零依赖场景估算 <text> 宽度；精确宽度需 node 引擎。
+_CJK_W = 1.0
+_ASCII_W = 0.52
+# 单个 text 元素的估算宽度上限（em），超过则视为异常长的标签
+_TEXT_EM_MAX = 42
+
+
+def _text_width_em(txt):
+    """按 CJK/ASCII 混合估算字符串宽度（单位 em，相对 font-size）。"""
+    w = 0.0
+    for ch in txt:
+        if ch in " \t":
+            w += 0.30
+        elif ord(ch) > 0x2E80:      # CJK / 全角标点 / 中文
+            w += _CJK_W
+        else:
+            w += _ASCII_W
+    return w
+
+
+def _svg_viewbox(svg_text):
+    """解析 viewBox，返回 (x, y, w, h)；无 viewBox 返回 None。"""
+    m = re.search(r'viewBox\s*=\s*["\']([-\d.\s]+)["\']', svg_text)
+    if not m:
+        return None
+    parts = m.group(1).split()
+    if len(parts) != 4:
+        return None
+    try:
+        return tuple(float(p) for p in parts)
+    except ValueError:
+        return None
+
+
+def _svg_effective_size(svg_text):
+    """取 svg 的有效宽高：优先 viewBox，其次 width/height 属性。"""
+    vb = _svg_viewbox(svg_text)
+    if vb:
+        return vb[2], vb[3]
+    w = re.search(r'\bwidth\s*=\s*["\']?(\d+(?:\.\d+)?)', svg_text)
+    h = re.search(r'\bheight\s*=\s*["\']?(\d+(?:\.\d+)?)', svg_text)
+    return (float(w.group(1)) if w else None, float(h.group(1)) if h else None)
+
+
+def _svg_css_class_map(svg_text, doc_text):
+    """从 <style> 里抽出 .cls{font-size:Xpx} 映射，供 class 形式的 text 取字号。"""
+    out = {}
+    for sm in re.finditer(r'<style[^>]*>(.*?)</style>', doc_text, re.S):
+        for cm in re.finditer(r'\.([A-Za-z][\w-]*)\s*\{[^}]*?font-size\s*:\s*(\d+(?:\.\d+)?)px',
+                              sm.group(1), re.S):
+            out[cm.group(1)] = float(cm.group(2))
+    return out
+
+
+def _parse_texts(svg_text, css_map):
+    """抽取 svg 内每个 <text> 的 (x, y, 内容, font_size, anchor, 所属panel索引)。
+
+    坐标换算：把祖先 <g transform="translate(tx,ty)"> 的平移累加到 text 上，
+    否则不同 panel 的局部坐标会被当成同一平面比对，产生大量误报
+    （实测跨品类手册 svg#1 三个 panel 各带 translate，不换算会虚报 1500+ 重叠）。
+    字号优先级：font-size 属性 > class 查表 > 默认 12.0
+    """
+    items = []
+    # 逐 panel（<g>）切分，累加 translate；无 <g> 的散文本归入 panel 0
+    panels = []          # [(translate_x, translate_y, svg_fragment)]
+    pos = 0
+    for gm in re.finditer(r'<g\b([^>]*)>', svg_text):
+        gt = re.search(r'translate\(\s*([-\d.]+)\s*[, ]\s*([-\d.]+)\s*\)', gm.group(1))
+        tx = float(gt.group(1)) if gt else 0.0
+        ty = float(gt.group(2)) if gt else 0.0
+        # panel 内容到该 g 的闭合 </g> 为止（浅层嵌套足够：手册不使用嵌套 g）
+        close = svg_text.find("</g>", gm.end())
+        frag = svg_text[gm.end():close if close != -1 else len(svg_text)]
+        panels.append((tx, ty, frag))
+    if not panels:
+        panels = [(0.0, 0.0, svg_text)]
+
+    for pi, (tx, ty, frag) in enumerate(panels):
+        for tm in re.finditer(r'<text\b([^>]*)>(.*?)</text>', frag, re.S):
+            attrs, inner = tm.group(1), tm.group(2)
+            xm = re.search(r'\bx\s*=\s*["\']([-\d.]+)["\']', attrs)
+            ym = re.search(r'\by\s*=\s*["\']([-\d.]+)["\']', attrs)
+            if not (xm and ym):
+                continue
+            content = re.sub(r'<[^>]+>', '', inner).strip()
+            if not content:
+                continue
+            fs = None
+            classes = []
+            cm = re.search(r'class\s*=\s*["\']([^"\']*)["\']', attrs)
+            if cm:
+                classes = cm.group(1).split()
+            fm = re.search(r'font-size\s*[:=]\s*["\']?(\d+(?:\.\d+)?)', attrs)
+            if fm:
+                fs = float(fm.group(1))
+            else:
+                for c in classes:
+                    if c in css_map:
+                        fs = css_map[c]
+                        break
+            anchor = "start"
+            am = re.search(r'text-anchor\s*=\s*["\'](\w+)["\']', attrs)
+            if am:
+                anchor = am.group(1)
+            elif "mid" in classes:
+                anchor = "middle"
+            items.append({
+                "x": float(xm.group(1)) + tx,
+                "y": float(ym.group(1)) + ty,
+                "text": content,
+                "fs": fs if fs else 12.0,
+                "anchor": anchor,
+                "panel": pi,
+            })
+    return items
+
+
+def cmd_svgcheck(args):
+    """SVG 图示几何校验：越界/重叠=阻断(exit 1)，覆盖率=建议(exit 0 SUGGEST)
+
+    引擎：
+      static（默认，零依赖）— 解析 viewBox 与 <text> 坐标，估算字宽做越界/重叠判定
+      node（可选，精确）    — 调 svg_audit.js（Playwright 真实渲染几何），需 Node 环境
+    """
+    text = read_text(args.file)
+    lines = text.split("\n")
+    svgs = re.findall(r'<svg\b.*?</svg>', text, re.S)
+    tol = args.tolerance
+    min_font = args.min_font_size
+    coverage_warn = args.coverage
+
+    hard = []     # 阻断项
+    soft = []     # 建议项
+
+    print(f"[1] svg 总数: {len(svgs)}")
+
+    if not svgs:
+        print("    WARN: 未发现任何 <svg>，若本手册应含图示请检查生成流程")
+        return 0
+
+    # 引擎选择：node 精确模式
+    if args.engine == "node":
+        return _svgcheck_node(args, svgs)
+
+    css_map = _svg_css_class_map("", text)
+    overflow = []
+    collide = []
+    tiny = []
+
+    for si, svg in enumerate(svgs, 1):
+        vw, vh = _svg_effective_size(svg)
+        vb = _svg_viewbox(svg)
+        if vw is None or vh is None:
+            soft.append(f"svg#{si} 无 viewBox/width/height，无法做越界判定")
+            continue
+        ox = vb[0] if vb else 0.0
+        oy = vb[1] if vb else 0.0
+
+        items = _parse_texts(svg, css_map)
+
+        for it in items:
+            # 字号
+            if it["fs"] < min_font:
+                tiny.append((si, it["fs"], it["text"]))
+            # 估算包围盒
+            w_em = _text_width_em(it["text"])
+            if w_em > _TEXT_EM_MAX:
+                soft.append(f"svg#{si} 标签过长({len(it['text'])}字)易溢出：{it['text'][:24]}")
+            w_px = w_em * it["fs"]
+            h_px = it["fs"] * 1.0
+            if it["anchor"] == "middle":
+                x0 = it["x"] - w_px / 2.0
+            elif it["anchor"] == "end":
+                x0 = it["x"] - w_px
+            else:
+                x0 = it["x"]
+            # y 是基线，包围盒约 [y-fs, y+fs*0.25]
+            y0 = it["y"] - it["fs"]
+            y1 = it["y"] + it["fs"] * 0.25
+
+            if (x0 < ox - tol or y0 < oy - tol or
+                    x0 + w_px > ox + vw + tol or y1 > oy + vh + tol):
+                overflow.append((si, it["text"], round(x0), round(y0),
+                                 round(x0 + w_px), round(y0 + h_px), vw, vh))
+
+        # 同一 panel 内两两重叠（估算包围盒）；跨 panel 的标签本就分属不同区域，
+        # 不比对——否则会把并排 panel 的正常标签判成重叠
+        for i in range(len(items)):
+            for j in range(i + 1, len(items)):
+                a, b = items[i], items[j]
+                if a["panel"] != b["panel"]:
+                    continue
+                wa = _text_width_em(a["text"]) * a["fs"]
+                wb = _text_width_em(b["text"]) * b["fs"]
+                ax0 = a["x"] - wa / 2 if a["anchor"] == "middle" else (
+                      a["x"] - wa if a["anchor"] == "end" else a["x"])
+                bx0 = b["x"] - wb / 2 if b["anchor"] == "middle" else (
+                      b["x"] - wb if b["anchor"] == "end" else b["x"])
+                ay0, by0 = a["y"] - a["fs"], b["y"] - b["fs"]
+                ah, bh = a["fs"] * 1.25, b["fs"] * 1.25
+                ox_ = min(ax0 + wa, bx0 + wb) - max(ax0, bx0)
+                oy_ = min(ay0 + ah, by0 + bh) - max(ay0, by0)
+                if ox_ > tol and oy_ > tol:
+                    collide.append((si, a["text"], b["text"], round(ox_), round(oy_)))
+
+    # ---------- 报告 ----------
+    print(f"[2] 越界: {len(overflow)} | 重叠: {len(collide)} | 小字: {len(tiny)}")
+
+    for si, t, x0, y0, x1, y1, vw, vh in overflow[:12]:
+        hard.append(f"OUTFLOW svg#{si} “{t[:22]}” 估算框({x0},{y0})-({x1},{y1}) 超出画布 {vw}x{vh}")
+    if len(overflow) > 12:
+        hard.append(f"OUTFLOW 另有 {len(overflow) - 12} 处越界（未逐条显示）")
+    for si, ta, tb, dx, dy in collide[:12]:
+        hard.append(f"COLLIDE svg#{si} “{ta[:16]}” ∩ “{tb[:16]}” 重叠 {dx}x{dy}px")
+    if len(collide) > 12:
+        hard.append(f"COLLIDE 另有 {len(collide) - 12} 处重叠（未逐条显示）")
+    for si, fs, t in tiny[:8]:
+        hard.append(f"SMALLTEXT svg#{si} font-size {fs}px < {min_font}px：{t[:20]}")
+
+    # 图示覆盖率（SUGGEST，不阻断）
+    kps = re.findall(r'<div class="kp\b', text)
+    figs = len(re.findall(r'class="fig-caption"', text))
+    if kps and coverage_warn:
+        cov = figs / len(kps)
+        print(f"[3] kp {len(kps)} | fig-caption {figs} | 覆盖率 {cov:.0%}")
+        if cov < args.min_coverage:
+            soft.append(f"[SUGGEST] 图示覆盖率 {cov:.0%} < {args.min_coverage:.0%}"
+                        f"（配文要求：每 kp ≥1 图，选型见 svg-guide.md）")
+
+    print("")
+    if hard:
+        print(f"RESULT: FAIL — {len(hard)} 处硬伤（越界/重叠/小字必须修复才能交付）")
+        for h in hard:
+            print("  " + h)
+    else:
+        print("RESULT: PASS — 未发现几何硬伤")
+    if soft:
+        for s in soft[:8]:
+            print("  " + s)
+        if len(soft) > 8:
+            print(f"  另有 {len(soft) - 8} 条建议")
+    return 1 if hard else 0
+
+
+def _svgcheck_node(args, svgs):
+    """精确引擎：调 svg_audit.js（Playwright 真实渲染几何），需 Node 环境。"""
+    import shutil
+    import subprocess
+    node = shutil.which("node")
+    if not node:
+        print("ERROR: --engine node 需要 Node 环境（未找到 node 可执行文件）")
+        print("       回退方案：使用默认 static 引擎（零依赖，精度较低）")
+        return 1
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "svg_audit.js")
+    if not os.path.exists(script):
+        print(f"ERROR: 缺少 {script}")
+        return 1
+    try:
+        p = subprocess.run([node, script, args.file], capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        print("ERROR: node 引擎超时（300s）")
+        return 1
+    out = p.stdout
+    print(out.rstrip())
+    if "ERROR" in out:
+        return 1
+    # 解析合计行末三个数字：越界 / 重叠 / 小字
+    # 合计行形如「合计    63      75     10      0」——文字列为空串占位，故只有 4 个数字
+    total_line = ""
+    for l in out.splitlines():
+        if l.strip().startswith("合计"):
+            total_line = l
+            break
+    nums = re.findall(r"\d+", total_line)
+    if len(nums) >= 4:
+        of, co, tiny = int(nums[-3]), int(nums[-2]), int(nums[-1])
+        print("")
+        if (of or co or tiny):
+            print(f"RESULT: FAIL — 越界 {of} / 重叠 {co} / 小字 {tiny}（精确引擎，必须修复）")
+            return 1
+        print("RESULT: PASS — 未发现几何硬伤（精确引擎）")
+        return 0
+    print("WARN: 未能解析 node 引擎输出汇总行，按 returncode 判定")
+    return 0 if p.returncode == 0 else 1
+
+
 def cmd_lint(args):
     """内容质量校验：基础规则（默认）+ 深度规则（--strict，v1.2 写作规范）"""
     text = read_text(args.file)
@@ -653,12 +949,23 @@ def cmd_lint(args):
                 issues.append(f"kp[{kp_term(lines, s)}] res 缺B站视频指引")
 
     svgn = text.count("<svg")
+    # 真实配图（v1.8.0）自带figcaption.fig-caption，但配图不占用「图X-Y」编号体系，
+    # 必须先剥离 figure.photo 块，否则会被误判为图号不配对。
+    photo_free = re.sub(r'<figure class="photo".*?</figure>', '', text, flags=re.S)
     fig_ids = []
-    for l in lines:
+    for l in photo_free.split("\n"):
         if 'class="fig-caption"' in l:
             fig_ids.extend(re.findall(r'图[A-Za-z0-9]+-\d+', l))
     if svgn != len(fig_ids):
         issues.append(f"svg({svgn}) 与 fig-caption 图号({len(fig_ids)}) 不配对")
+    n_photo = len(re.findall(r'<figure class="photo"', text))
+    if n_photo:
+        n_credit = len(re.findall(r'class="photo-credit"', text))
+        n_b64 = len(re.findall(r'data:image/', text))
+        if n_credit != n_photo:
+            issues.append(f"真实配图({n_photo}) 与署名块({n_credit}) 不配对（署名块为强制项）")
+        if n_b64 < n_photo:
+            issues.append(f"真实配图({n_photo}) 未全部base64 内联({n_b64})，会破坏自包含属性")
 
     min_fs = getattr(args, "min_font_size", 9.5)
     for m in re.finditer(r'<svg.*?</svg>', text, re.S):
@@ -834,6 +1141,22 @@ def main():
                     help="deep quality checks (v1.2 writing rules: condition wording, "
                          "engineering anchor, analogy marker, analogy dedup, dim length cap)")
     sp.set_defaults(fn=cmd_lint)
+
+    sp = sub.add_parser("svgcheck", help="SVG geometry gate: text overflow/collision/small-font "
+                                         "= BLOCK (exit 1); coverage = suggest (v1.5)")
+    add_file(sp)
+    sp.add_argument("--engine", choices=["static", "node"], default="static",
+                    help="static=zero-dep coordinate estimate (default); "
+                         "node=Playwright real-render geometry (needs Node)")
+    sp.add_argument("--tolerance", type=float, default=2.0,
+                    help="overflow/collision tolerance in px (default 2)")
+    sp.add_argument("--min-font-size", type=float, default=9.5,
+                    help="minimum svg font size in px (default 9.5)")
+    sp.add_argument("--min-coverage", type=float, default=0.8,
+                    help="suggest threshold for kp figure coverage (default 0.8)")
+    sp.add_argument("--no-coverage", dest="coverage", action="store_false",
+                    help="skip coverage suggestion")
+    sp.set_defaults(fn=cmd_svgcheck, coverage=True)
 
     args = p.parse_args()
     sys.exit(args.fn(args))

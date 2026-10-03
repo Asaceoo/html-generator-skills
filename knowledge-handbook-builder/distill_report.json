@@ -1,0 +1,45 @@
+{
+  "skill_dir": "C:\\Users\\iamly\\.workbuddy\\skills\\knowledge-handbook-builder",
+  "total_refs": 4,
+  "total_size_chars": 21864,
+  "total_size_saving_estimate": 0,
+  "p0_count": 0,
+  "analysis": [
+    {
+      "file": "html-structure.md",
+      "size_chars": 8722,
+      "normalized_size": 1.596,
+      "citations": 3,
+      "f_approx": 0.0,
+      "priority": "核心资产-保留",
+      "size_saving_estimate": 8722
+    },
+    {
+      "file": "workflow.md",
+      "size_chars": 6058,
+      "normalized_size": 1.108,
+      "citations": 3,
+      "f_approx": 0.0,
+      "priority": "核心资产-保留",
+      "size_saving_estimate": 6058
+    },
+    {
+      "file": "svg-guide.md",
+      "size_chars": 3632,
+      "normalized_size": 0.664,
+      "citations": 3,
+      "f_approx": 0.0,
+      "priority": "核心资产-保留",
+      "size_saving_estimate": 3632
+    },
+    {
+      "file": "editing-safety.md",
+      "size_chars": 3452,
+      "normalized_size": 0.632,
+      "citations": 2,
+      "f_approx": 0.0,
+      "priority": "核心资产-保留",
+      "size_saving_estimate": 3452
+    }
+  ]
+}

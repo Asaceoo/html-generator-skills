@@ -1,0 +1,12 @@
+模块	维度	子分	文件	行号	详情
+SkillOps	dim6	3/3	references/*	-	核心4 references 全被引用，broken_paths=0，frontmatter 无警告（description 899字符合规）
+SkillOps	dim6	warn	references/*.extbak*	-	8个 .extbak/.bak 备份文件滞留目录造成扫描噪音（目录卫生问题）
+HASP	dim5	3/3	SKILL.md,references/*	-	软化词0处
+CASCADE	dim6	-	-	-	total_refs=4，stale=0
+Distill	dim7b	1/2	references/*.extbak*	-	核心4文件 F=0 保留；8个备份文件 F=1.0 判 P0可精简（备份噪音非内容冗余）
+Sentinel	dim10	2/2	全部	-	5类安全检测0命中
+EvoSkill	dim3	-	-	-	历史 results.tsv：dim8 三连升 3.95→4.2→4.4 无振荡；dim4 一次性修复无反复
+html-structure.md	0.0	核心资产-保留	8722	8722	2026-10-03 13:44:40
+workflow.md	0.0	核心资产-保留	6058	6058	2026-10-03 13:44:40
+svg-guide.md	0.0	核心资产-保留	3632	3632	2026-10-03 13:44:40
+editing-safety.md	0.0	核心资产-保留	3452	3452	2026-10-03 13:44:40

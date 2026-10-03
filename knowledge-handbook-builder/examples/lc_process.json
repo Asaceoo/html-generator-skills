@@ -1,0 +1,22 @@
+{
+  "id": "lc_process",
+  "layout": "elk",
+  "direction": "down",
+  "width": 920,
+  "title": "图2-3 注塑件生产全流程（八道工序）",
+  "_note": "本例刻意用 down 方向演示 D2 的硬限制：direction 是全局的，无法在同一张图里混排「两行 4+4」。8 步链式在 right 方向会被压到 0.60x（1524→920），在 down 方向则变成 166×1060 的窄高条 —— 两种都不理想。结论：长链式流程图不要用 D2，改手写 SVG 或 ECharts Sankey。D2 只适合分支图（决策树 / 因果树 / 层级结构）。",
+  "d2": "p1: 原料烘干 {\n  class: act\n}\np2: 配料称量 {\n  class: act\n}\np3: 注塑成型 {\n  class: start\n}\np4: 冷却定型 {\n  class: act\n}\np5: 取模剪料 {\n  class: act\n}\np6: 二次加工 {\n  class: act\n}\np7: 表面处理 {\n  class: act\n}\np8: 装配检验 {\n  class: fail\n}\n\np1 -> p2 -> p3 -> p4 -> p5 -> p6 -> p7 -> p8\n",
+  "nodeIds": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"],
+  "note": "关键控制点：注塑成型的料温 / 模温 / 保压决定 80% 的缺陷类型；装配检验是最后一道拦截，漏检会流入客户端。",
+  "mustKeep": [
+    "原料烘干",
+    "配料称量",
+    "注塑成型",
+    "冷却定型",
+    "取模剪料",
+    "二次加工",
+    "表面处理",
+    "装配检验",
+    "关键控制点"
+  ]
+}

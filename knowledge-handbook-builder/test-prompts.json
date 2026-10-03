@@ -1,0 +1,20 @@
+[
+  {
+    "id": "p1_typical_full_build_v142",
+    "mode": "full",
+    "prompt": "深度研究室内木门（免漆门/实木复合门）这个品类，做成一本知识手册：每个知识点配通俗解释、五维深度解读、推荐书籍和B站视频搜索指引、适合的SVG图示；关键数据标注证据级别（A/B/C色标）；交付为自包含单文件HTML，交付前跑 validate + lint --strict 全绿，并用 coverage 和 termcheck 自查。",
+    "expect": "五阶段全流程；Phase 1 过广度扫描矩阵+证据分级+深度五问+产出清单；每 kp 配图；可选维按需 0-2；交付前 validate+lint 全绿 + coverage/termcheck 自查"
+  },
+  {
+    "id": "p2_incremental_enhance_v142",
+    "mode": "incremental",
+    "prompt": "这份手册已经建好了（已有 20 个知识点），我想再补 5 个关于门锁五金的新知识点，帮我加进去并保证不破坏已有内容；另外检查一下手册里引用同一标准号的数值有没有前后矛盾。",
+    "expect": "增量增强模式（anchors/dupres 定位→分批 replace --expect 1→validate+lint 全绿）；lint --strict 的 S9 对同一标准号跨 kp 数值做对账；编辑前读 editing-safety.md"
+  },
+  {
+    "id": "p3_ambiguity_routing_v142",
+    "mode": "ambiguous",
+    "prompt": "帮我把这份手册做得更好一点（没说手册在哪、没说加什么内容、没说重建还是增量）。",
+    "expect": "歧义处理：先确认手册路径与范围；区分增量增强 vs 全量重建；不盲目重建已有手册；利用 coverage/termcheck/lint 暴露的可改进点作为确认建议"
+  }
+]

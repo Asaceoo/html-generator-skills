@@ -12,6 +12,10 @@
 5. **知识体系有逻辑**：通用基础 → 品类篇章 → 综合实战；模块编号与目录锚点同步
 6. **互操作**（模板默认启用）：结构挂 html-generator 双 class（语义类），手册可一键转 Word/PDF/Markdown
 7. **调研说明附录（v1.4.3）**：手册结尾含「附录：调研说明」（调研方法/来源清单/存疑项/未覆盖项），前两要素由 `sources` 命令生成，未覆盖项人工确认
+8. **图示几何零硬伤（v1.5.0）**：`svgcheck` 退出码为 0（越界/重叠/小字均为 0）。这是独立于 validate/lint 的**硬闸门**——实测 341 张图在 validate/lint 双绿状态下仍有 221 处越界 + 105 处重叠，二者不做几何检查是结构性盲区
+9. **数据型图必须声明式生成（v1.6.0）**：柱/条/曲线/雷达图**禁止手写坐标**，一律走 `scripts/render_chart.js`（ECharts SSR）+ `scripts/embed_chart.py` 替换。`embed_chart.py` 的数据一致性闸门必须放行（旧图数值全部保留）；替换后 `svgcheck --engine node` 退出码须为 0。见 `references/svg-guide.md` §数据型图（B 类）
+10. **依赖型图选型要留痕（v1.7.0）**：用 D2 生成依赖型图时，spec 必须填 `nodeIds`（ID 泄漏闸门）与 `mustKeep`（中文标签保留闸门），两项闸门须全绿。**线性流程图禁止用 D2**（实测 8 步链式被压到 0.60x 或变窄高条）。见 `references/svg-guide.md` §依赖型图（C 类）
+11. **真实配图许可合规（v1.8.0）**：引入外部图片时**只收 CC0 / PDM / CC BY**，`BY-NC`（禁商用）、`BY-ND`（禁改写含缩放）、`BY-SA`（许可传染）一律拒收。走 `scripts/fetch_image.py` + `scripts/embed_image.py`，三道闸门（许可 / sha256 完整性 / 体积预算）须全绿。图片必须 **base64 内联**（零热链），并强制配套署名块。见 `references/svg-guide.md` §真实配图（D 类）
 
 ## 入口澄清协议（先问再动）
 
@@ -51,9 +55,85 @@
 - 🔴 **CHECKPOINT**：骨架生成后先跑 validate 确认结构通过，再开始内容填充
 
 ### Phase 4 SVG图示设计
+- **第一刀先分三类**（v1.7.0 补齐 C 类）：
+  - **A 类·数据型**（有具体数值：柱/条/曲线/雷达/饼）→ 走 `scripts/render_chart.js`（ECharts SSR）**声明式生成，禁止手写坐标**。schema、选型、6 个实测坑见 `references/svg-guide.md` §数据型图（B 类）
+  - **B 类·依赖型·分支图**（决策树/因果树/层级结构，分支 ≤ 5）→ 可选走 `scripts/render_d2.cjs`（D2 WASM）。**注意 D2 只适合分支图**，7 个坑与实测选型表见 `references/svg-guide.md` §依赖型图（C 类）
+  - **C 类·结构型·需精确坐标**（甘特/流程/冰山/时间线/爆炸图/剖面/对比卡）→ 走 13 类模式库手写
+- ⚠ **线性流程图不要用 D2**（实测 8 步链式被压到 0.60x 或变成窄高条，且 `direction` 全局、无法混排 S 形）
 - 13类图型模式库与防重叠规则：读 `references/svg-guide.md`
 - 每幅图必须带 `<div class="fig-caption">` 图号说明；字号≥9.5px（lint 强制校验）
 - 🔴 **CHECKPOINT**：图示完成后抽查防重叠与图号连续性，再进入内容填充
+  - **防重叠抽查必须用真实渲染截图**（方法与命令见 `references/svg-guide.md` §防重叠验收方法）；静态坐标检查误报率高且查不出真实重叠，validate/lint 双绿 ≠ 无重叠
+  - **几何闸门用 `--engine node`**（`static` 引擎读不懂 ECharts 的 `<g transform>` 嵌套，会把好图报成越界）
+  - 截图用 `scripts/svg2png.js`，它会打印实测 PNG 尺寸；**看到「✗ 疑似坍缩」说明图被压成缩略图**，是工具或 SVG 缺 `width`/`height`，不是图本身有问题
+
+### 数据型图的产线流程（v1.6.0）
+
+```bash
+# 1) 粗筛：找出手册里哪些图该迁到 ECharts（v2：纯数值系列确证，排除时间轴/文本区间/步骤信息图/概念区图/轴装饰示意图）
+python scripts/find_data_charts.py <手册.html>
+#    ⚠ 只看 migratable 列表；review 桶是富标注信息图（非纯数值系列），勿迁
+
+# 2) 声明数据：写 spec JSON（参考 examples/t_bar.json、examples/kc_fig0_7.json）
+#    必填 type/height/series；带底部读图条就加 note；多图共存必须给每图不同的 id
+
+# 3) 渲染
+NODE_PATH=~/.workbuddy/binaries/node/workspace/node_modules \
+  ~/.workbuddy/binaries/node/versions/22.22.2-3/node.exe scripts/render_chart.js <chart.json>
+
+# 4) 替换（先预览，数据校验通过再 --apply）
+python scripts/embed_chart.py <手册.html> <svg序号0基> <chart.svg>
+python scripts/embed_chart.py <手册.html> <svg序号0基> <chart.svg> --apply
+
+# 5) 复验（node 引擎）+ 目检
+python scripts/handbook_tools.py svgcheck <手册.html> --engine node
+```
+
+### 依赖型图（D2）的产线流程（v1.7.0）
+
+⚠ **先判断该不该用 D2**：只有「分支型」图（决策树/因果树/层级，分支 ≤ 5）值得迁。
+线性流程图迁过去会更差（见 svg-guide §C 类 实测表）。
+
+```bash
+# 0) 一次性安装D2（隔离目录，禁止 npm -g）
+cd ~/.workbuddy/binaries/node/workspace && node install @terrastruct/d2
+
+# 1) 粗筛：扫出候选（v2：分支/决策节点确证，线性流程已自动排除）
+python scripts/find_dep_charts.py <手册.html>
+#    ⚠ 只看 migratable 列表（confidence=high 优先）；review 桶是被排除/信号不足，勿当清单
+#    ⚠ 线性流程（无分支单一链）按硬规则禁迁 D2，已落在 review 桶
+
+# 2) 写 spec JSON（参考 examples/jg1_7_decision_tree.json）
+#    必填：id（salt 唯一）/ d2（DSL）/ nodeIds（ID 泄漏闸门）
+#    强烈建议填：mustKeep（文本保留闸门）、note（底部读图条）
+#    DSL 铁律：节点先声明，连线只写箭头；多行标签用字面 \n；颜色带引号
+
+# 3) 渲染（工具内置 ID 泄漏 / 文本保留 / 版面 三项闸门）
+NODE_PATH=~/.workbuddy/binaries/node/workspace/node_modules \
+  ~/.workbuddy/binaries/node/versions/22.22.2-3/node.exe scripts/render_d2.cjs <chart.json>
+
+# 4) 工具自检（35 项断言，改工具后必跑）
+NODE_PATH=<ws>/node_modules node scripts/test_d2.cjs
+
+# 5) 截图目检 —— 不可跳过
+#    闸门查不出的两类视觉问题：根节点被拉成巨柱、note 溢出被裁
+node scripts/svg2png.js <chart.svg> <chart.png> 960
+
+# 6) 嵌入 + 复验
+python scripts/embed_chart.py <手册.html> <svg序号0基> <chart.svg> --apply
+python scripts/handbook_tools.py svgcheck <手册.html> --engine node
+```
+
+> ⚠ **`embed_chart.py` 的数据一致性闸门目前只校验「数值标签」**，
+> 用于 D2 决策树这类以中文标签为主的图时闸门形同虚设。
+> 本轮靠 `render_d2.cjs` 自身的 `mustKeep` 闸门兜底（中文标签全量核对）。
+> 若要把 D2 图批量嵌入手册，需先给 `embed_chart.py` 加「全文本标签保留」模式。
+
+> `svg序号` 用 **0 基**，与 `svg_audit.js` / `svg_audit.js --json` 口径一致。
+> 拿不准序号时先跑 `find_data_charts.py`，它输出的 `si` 就是 0 基序号。
+>
+> **序号会随图增删漂移**：一批图改完必须重新跑 `find_data_charts.py`，
+> 不要沿用上一批的序号（会导致替换错图，且数据校验闸门可能因数值恰好相同而放行）。
 
 ### Phase 5 内容填充、批量编辑与验证
 - 大文件写入：先写第一块，后续块以追加方式写入（UTF-8）
@@ -79,6 +159,68 @@ python scripts/handbook_tools.py path      <手册.html>            # 学习路�
 python scripts/handbook_tools.py coverage  <手册.html>            # 知识覆盖检查：类型分布/偏科/产业链盲区（v1.4.1）
 python scripts/handbook_tools.py termcheck <手册.html>            # 术语一致性：term包含/标准型缺标准号/标准号清单（v1.4.2）
 python scripts/handbook_tools.py sources   <手册.html>            # 调研说明附录：证据分布/来源清单/存疑项/kp元数据（v1.4.3）
+python scripts/handbook_tools.py svgcheck  <手册.html> [--engine static|node] [--tolerance 2] [--no-coverage]   # 图示几何闸门 v1.5.0：越界/重叠/小字，退出码非0即阻断
+```
+
+**图表产线（v1.6.0，需 Node + Playwright + echarts）**：
+
+```bash
+python scripts/find_data_charts.py <手册.html>                 # 粗筛数据型图候选（输出 0 基 si 序号）
+node   scripts/render_chart.js <chart.json> [更多.json...]      # ECharts SSR 渲染，--demo 跑内置样例
+python scripts/embed_chart.py <手册.html> <si> <chart.svg> [--apply]   # 替换（内置数据一致性闸门）
+python scripts/test_embed.py                                   # 工具链自测（22 项断言）
+node   scripts/svg_audit.js <手册.html> [--json]                # 几何普查
+```
+
+> `NODE_PATH` 需指向 `~/.workbuddy/binaries/node/workspace/node_modules`。
+> 工具链改过之后必须跑一遍 `test_embed.py`——它覆盖了序号越界、数据丢失拒绝、
+> 备份保护、class 前缀唯一、note 折行落位、非法输入、XML 转义七类边界。
+
+**依赖型图产线（v1.7.0，需 Node + @terrastruct/d2 + Playwright）**：
+
+```bash
+python scripts/find_dep_charts.py <手册.html>                # 粗筛依赖型图候选（语义+连线+marker+节点数）
+node   scripts/render_d2.cjs <chart.json> [更多.json...]     # D2 WASM 渲染，--demo 跑内置样例
+node   scripts/test_d2.cjs                                   # 工具自测（35 项断言，同进程调用）
+node   scripts/svg2png.js <in.svg> [out.png] [width]         # 截图目检（打印实测 PNG 尺寸，坍缩会报警）
+```
+
+### 真实配图产线（v1.8.0）
+
+```bash
+python scripts/fetch_image.py --search "loudspeaker" --lic cc0,by \
+    --save-dir _assets --manifest _assets/manifest.json   # 检索+下载+许可闸门
+python scripts/fetch_image.py --import-json _mk/r.json \                # 沙箱内推荐
+    --save-dir _assets --manifest _assets/manifest.json
+python scripts/fetch_image.py --audit _assets/manifest.json            # 离线审计（退出码 0 = 全合规）
+python scripts/embed_image.py <手册.html> --manifest _assets/manifest.json \
+    --fig 01 --fig 05 --caption "…" --caption "…" --dry-run            # 干跑
+python scripts/embed_image.py <手册.html> --manifest _assets/manifest.json \
+    --fig 01 --fig 05 --caption "…" --caption "…"                     # 写入（自动备份）
+```
+
+> ⚠ **沙箱内 `api.openverse.org` 的 Python 直连会被代理拦（502 Tunnel connection failed）**，
+> 但 WebFetch 可用。走「WebFetch 取 JSON → `--import-json` 导入」这条唯一可行路径。
+>
+> ⚠ **Commons 缩略图 URL 不能手工拼宽度**（会 `HTTP 400Use thumbnail sizes listed on`）。
+> 必须请求时带 `iiurlwidth`，取 API 返回的 `thumburl`；且API 返回的
+> `thumb.wikimedia.org` 在本机不可达，需换回 `upload.wikimedia.org`。
+
+> ⚠ **`test_d2.cjs` 必须同进程调用工具**（`require` + `renderToString()`），
+> 不能 spawn 子进程 —— 沙箱环境下嵌套 spawn Node 会报 `EBUSY`
+> （表现为 `status=null`、无 stdout/stderr，所有渲染测试全挂但工具手动跑完全正常）。
+>
+> ⚠ **D2 只用于分支型图**（决策树/因果树/层级，分支 ≤ 5）。
+> 线性流程图迁过去更差：`right` 被压到 0.60x、`down` 变窄高条，
+> 且 `direction` 是全局的、无法混排 S 形。选型实测表见 `references/svg-guide.md` §依赖型图（C 类）。
+
+# --- 图示几何修复工具链 v1.5.0（node 部分需 Playwright）---
+export NODE_PATH=<ws>/node_modules      # Playwright 所在目录
+node scripts/svg_audit.js  <手册.html> [--json]     # 真机渲染普查：越界/重叠/小字（精确口径）
+python scripts/measure_svg_bbox.py <手册.html>     # 画布诊断：内容超出 viewBox 的图（只报告）
+python scripts/measure_svg_bbox.py --widen <手册.html>   # 人工确认后扩画布写入
+node scripts/svg_fix.js   --apply <手册.html>       # 生成位移计划（只导出计划，不改 DOM）
+python scripts/svg_apply.py --apply <手册.html>      # 按计划回写坐标（带碰撞检测+备份）
 ```
 
 ## 增量增强模式（手册已存在时）
@@ -106,6 +248,34 @@ python scripts/handbook_tools.py sources   <手册.html>            # 调研说�
 6. lint：基线五维齐全 + 可选维0-2合法 / dim≥10字 / explain≥30字 / res含书籍与B站 / SVG字号≥9.5；**新写手册建议 `--strict` 硬伤为0**（principle量化锚、kp图示覆盖率<80%为SUGGEST级）
 7. 封面副标题与页脚统计同步更新
 8. 调研说明附录存在（appendix-research category；`sources` 四要素已填充，未覆盖项已人工确认）
+9. **svgcheck 退出码 = 0**（v1.5.0 硬闸门）：越界 0 / 重叠 0 / 小字 0
+   - 首选 `--engine node`（Playwright 真实渲染，精确）；无 Playwright 时用 `static`（零依赖，会漏报，务必配合截图目检）
+   - **含 ECharts 图时必须用 `node`**：`static` 读不懂 `<g transform>` 嵌套结构，会把好图报成越界/重叠（实测试点图误报 2 处越界 + 1 处假重叠）
+   - 非 0 时的处置顺序：先 `measure_svg_bbox.py` 诊断画布（内容整体超框 → `--widen`），再 `svg_fix.js` + `svg_apply.py` 修零散标签
+   - **修完必须复跑 svgcheck 确认重叠未增加**——位移可能把标签挪到一起，实测不加碰撞检测时越界 -84% 但重叠 +29 处
+   - **两个工具结论矛盾时先 diff 源码**（v1.6.0 实测）：`scripts/svg_audit.js` 修好后若没同步工作区副本，会出现「工作区 0 越界、闸门 59 越界」。此时**不能凭任一方下结论**，必须 `diff` 两版定位谁过期
+   - ⚠ `svg_audit.js` **跳过非 `.html` 后缀**：拿 `.bak` 做基线对照会静默返回 `0 SVG`，看着像全绿，实则没跑。基线对照先把备份复制成 `.html`
+10. **数据型图一致性（v1.6.0）**：本轮若替换/新增了 ECharts 数据型图
+    - `embed_chart.py` 的数据一致性闸门已放行（旧图数值全部保留，未偷偷改数据）
+    - 每张图的 `id` 唯一（否则 ECharts 的 `zr0-cls-N` 类名跨图冲突，后一张的样式会覆盖前一张配色）
+    - 带读图条的图确认 `height` 已含 note 高度（ECharts 只画绘图区，提示条由脚本追加在下方）
+    - 数值标签小数位与原文一致（JSON 的 `37.0` 解析后是 `37`，需显式 `"format": 1`）
+11. **依赖型图一致性（v1.7.0）**：本轮若新增/替换了 D2 依赖型图
+    - `render_d2.cjs` 输出的三项闸门全绿：`✓ 无 ID 泄漏 / 必保留文本齐全`
+    - `spec.nodeIds` 已填（否则 ID 泄漏闸门形同虚设）
+    - `spec.mustKeep` 已覆盖旧图**全部中文标签**（D2 决策树以中文为主，`embed_chart.py` 的数值闸门在此无效）
+    - **必须截图目检**：D2 会把多分支图的根节点框拉成巨柱（自动布局固有行为，无法规避）；
+      闸门查不出这一类视觉问题
+    - 确认没有把线性流程图误迁到 D2（见 svg-guide §C 类 实测表）
+12. **真实配图合规（v1.8.0）**：本轮若新增了外部来源的真实配图
+    - `fetch_image.py --audit` 全部记录 `合规`，退出码 0
+    - 每张图协议 ∈ {CC0, PDM, CC BY}；**出现 BY-NC / BY-ND / BY-SA 一律拒收**
+    - `by` 类必须有作者名 + 许可协议链接 + 来源页三件套（`embed_image.py` 硬闸门已校验）
+    - 全部 base64 内联，**零 `http://` 热链**（热链会让离线/内网环境变裂图，破坏自包含属性）
+    - `figure.photo` 数量 == `.photo-credit` 数量 == `data:image/` 数量（`lint` 已加两条断言）
+    - 配图**未占用「图X-Y」编号**（lint 的图号配对检查会先剥离 `figure.photo` 块）
+    - 截图目检时**先滚动全页再判读**：`loading="lazy"` 的图在视口外 `naturalWidth=0`，
+      直接统计会得到「图片损坏」的假阴性
 
 ## Phase 5 收敛技巧与 lint 误报识别（v1.4.3 实战补充）
 

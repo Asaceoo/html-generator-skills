@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" data-d2-version="v0.7.0-HEAD" preserveAspectRatio="xMinYMin meet" viewBox="0 -48 894 941" width="894" height="941"><rect x="-9.000000" y="-48.000000" width="894.000000" height="811.000000" rx="0.000000" fill="#FFFFFF" class=" fill-N7" stroke-width="0" /><style type="text/css"><![CDATA[
+.d2-2440701399 .text-bold {
+	font-family: "d2-2440701399-font-bold";
+}
+@font-face {
+	font-family: d2-2440701399-font-bold;
+	src: url("data:application/font-woff;base64,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");
+}]]></style><style type="text/css"><![CDATA[.shape {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+}
+.connection {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blend {
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+		.d2-2440701399 .fill-N1{fill:#0A0F25;}
+		.d2-2440701399 .fill-N2{fill:#676C7E;}
+		.d2-2440701399 .fill-N3{fill:#9499AB;}
+		.d2-2440701399 .fill-N4{fill:#CFD2DD;}
+		.d2-2440701399 .fill-N5{fill:#DEE1EB;}
+		.d2-2440701399 .fill-N6{fill:#EEF1F8;}
+		.d2-2440701399 .fill-N7{fill:#FFFFFF;}
+		.d2-2440701399 .fill-B1{fill:#0D32B2;}
+		.d2-2440701399 .fill-B2{fill:#0D32B2;}
+		.d2-2440701399 .fill-B3{fill:#E3E9FD;}
+		.d2-2440701399 .fill-B4{fill:#E3E9FD;}
+		.d2-2440701399 .fill-B5{fill:#EDF0FD;}
+		.d2-2440701399 .fill-B6{fill:#F7F8FE;}
+		.d2-2440701399 .fill-AA2{fill:#4A6FF3;}
+		.d2-2440701399 .fill-AA4{fill:#EDF0FD;}
+		.d2-2440701399 .fill-AA5{fill:#F7F8FE;}
+		.d2-2440701399 .fill-AB4{fill:#EDF0FD;}
+		.d2-2440701399 .fill-AB5{fill:#F7F8FE;}
+		.d2-2440701399 .stroke-N1{stroke:#0A0F25;}
+		.d2-2440701399 .stroke-N2{stroke:#676C7E;}
+		.d2-2440701399 .stroke-N3{stroke:#9499AB;}
+		.d2-2440701399 .stroke-N4{stroke:#CFD2DD;}
+		.d2-2440701399 .stroke-N5{stroke:#DEE1EB;}
+		.d2-2440701399 .stroke-N6{stroke:#EEF1F8;}
+		.d2-2440701399 .stroke-N7{stroke:#FFFFFF;}
+		.d2-2440701399 .stroke-B1{stroke:#0D32B2;}
+		.d2-2440701399 .stroke-B2{stroke:#0D32B2;}
+		.d2-2440701399 .stroke-B3{stroke:#E3E9FD;}
+		.d2-2440701399 .stroke-B4{stroke:#E3E9FD;}
+		.d2-2440701399 .stroke-B5{stroke:#EDF0FD;}
+		.d2-2440701399 .stroke-B6{stroke:#F7F8FE;}
+		.d2-2440701399 .stroke-AA2{stroke:#4A6FF3;}
+		.d2-2440701399 .stroke-AA4{stroke:#EDF0FD;}
+		.d2-2440701399 .stroke-AA5{stroke:#F7F8FE;}
+		.d2-2440701399 .stroke-AB4{stroke:#EDF0FD;}
+		.d2-2440701399 .stroke-AB5{stroke:#F7F8FE;}
+		.d2-2440701399 .background-color-N1{background-color:#0A0F25;}
+		.d2-2440701399 .background-color-N2{background-color:#676C7E;}
+		.d2-2440701399 .background-color-N3{background-color:#9499AB;}
+		.d2-2440701399 .background-color-N4{background-color:#CFD2DD;}
+		.d2-2440701399 .background-color-N5{background-color:#DEE1EB;}
+		.d2-2440701399 .background-color-N6{background-color:#EEF1F8;}
+		.d2-2440701399 .background-color-N7{background-color:#FFFFFF;}
+		.d2-2440701399 .background-color-B1{background-color:#0D32B2;}
+		.d2-2440701399 .background-color-B2{background-color:#0D32B2;}
+		.d2-2440701399 .background-color-B3{background-color:#E3E9FD;}
+		.d2-2440701399 .background-color-B4{background-color:#E3E9FD;}
+		.d2-2440701399 .background-color-B5{background-color:#EDF0FD;}
+		.d2-2440701399 .background-color-B6{background-color:#F7F8FE;}
+		.d2-2440701399 .background-color-AA2{background-color:#4A6FF3;}
+		.d2-2440701399 .background-color-AA4{background-color:#EDF0FD;}
+		.d2-2440701399 .background-color-AA5{background-color:#F7F8FE;}
+		.d2-2440701399 .background-color-AB4{background-color:#EDF0FD;}
+		.d2-2440701399 .background-color-AB5{background-color:#F7F8FE;}
+		.d2-2440701399 .color-N1{color:#0A0F25;}
+		.d2-2440701399 .color-N2{color:#676C7E;}
+		.d2-2440701399 .color-N3{color:#9499AB;}
+		.d2-2440701399 .color-N4{color:#CFD2DD;}
+		.d2-2440701399 .color-N5{color:#DEE1EB;}
+		.d2-2440701399 .color-N6{color:#EEF1F8;}
+		.d2-2440701399 .color-N7{color:#FFFFFF;}
+		.d2-2440701399 .color-B1{color:#0D32B2;}
+		.d2-2440701399 .color-B2{color:#0D32B2;}
+		.d2-2440701399 .color-B3{color:#E3E9FD;}
+		.d2-2440701399 .color-B4{color:#E3E9FD;}
+		.d2-2440701399 .color-B5{color:#EDF0FD;}
+		.d2-2440701399 .color-B6{color:#F7F8FE;}
+		.d2-2440701399 .color-AA2{color:#4A6FF3;}
+		.d2-2440701399 .color-AA4{color:#EDF0FD;}
+		.d2-2440701399 .color-AA5{color:#F7F8FE;}
+		.d2-2440701399 .color-AB4{color:#EDF0FD;}
+		.d2-2440701399 .color-AB5{color:#F7F8FE;}.appendix text.text{fill:#0A0F25}.md{--color-fg-default:#0A0F25;--color-fg-muted:#676C7E;--color-fg-subtle:#9499AB;--color-canvas-default:#FFFFFF;--color-canvas-subtle:#EEF1F8;--color-border-default:#0D32B2;--color-border-muted:#0D32B2;--color-neutral-muted:#EEF1F8;--color-accent-fg:#0D32B2;--color-accent-emphasis:#0D32B2;--color-attention-subtle:#676C7E;--color-danger-fg:red;}.sketch-overlay-B1{fill:url(#streaks-darker-d2-2440701399);mix-blend-mode:lighten}.sketch-overlay-B2{fill:url(#streaks-darker-d2-2440701399);mix-blend-mode:lighten}.sketch-overlay-B3{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-B4{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-B5{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-B6{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-AA2{fill:url(#streaks-dark-d2-2440701399);mix-blend-mode:overlay}.sketch-overlay-AA4{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-AA5{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-AB4{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-AB5{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-N1{fill:url(#streaks-darker-d2-2440701399);mix-blend-mode:lighten}.sketch-overlay-N2{fill:url(#streaks-dark-d2-2440701399);mix-blend-mode:overlay}.sketch-overlay-N3{fill:url(#streaks-normal-d2-2440701399);mix-blend-mode:color-burn}.sketch-overlay-N4{fill:url(#streaks-normal-d2-2440701399);mix-blend-mode:color-burn}.sketch-overlay-N5{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-N6{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.sketch-overlay-N7{fill:url(#streaks-bright-d2-2440701399);mix-blend-mode:darken}.light-code{display: block}.dark-code{display: none}]]></style><g class="dA== title"><g class="shape" ></g><text x="437.500000" y="-12.000000" fill="#1e293b" class="text-bold" style="text-anchor:middle;font-size:15px">图1-7 五大注塑缺陷排查决策树（工艺 → 模具 → 结构）</text></g><g class="czA= start"><g class="shape" ><rect x="12.000000" y="277.000000" width="165.000000" height="200.000000" rx="4.000000" stroke="#2563eb" fill="#2563eb" style="stroke-width:2;" /></g><text x="94.500000" y="382.500000" fill="#ffffff" class="text-bold" style="text-anchor:middle;font-size:16px">发现注塑缺陷</text></g><g class="cTE= q"><g class="shape" ><path d="M 442 123 C 441 123 440 123 440 123 L 308 78 C 307 78 307 77 308 76 L 440 31 C 441 31 444 31 445 31 L 576 76 C 577 76 577 77 576 78 L 444 123 C 444 123 443 123 442 123 Z" stroke="#2563eb" fill="#eff6ff" style="stroke-width:2;" /></g><text x="442.000000" y="82.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">表面有凹坑？</text></g><g class="YTE= ans"><g class="shape" ><rect x="647.000000" y="12.000000" width="197.000000" height="130.000000" rx="4.000000" stroke="#16a34a" fill="#f0fdf4" style="stroke-width:2;" /></g><text x="745.500000" y="50.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="745.500000" dy="0.000000">缩痕</tspan><tspan x="745.500000" dy="17.000000">工艺：</tspan><tspan x="745.500000" dy="17.000000">加保压 / 延长保压</tspan><tspan x="745.500000" dy="17.000000">结构：</tspan><tspan x="745.500000" dy="17.000000">掏空减肉厚</tspan></text></g><g class="cTI= q"><g class="shape" ><path d="M 442 273 C 441 273 440 273 440 273 L 308 228 C 307 228 307 227 308 226 L 440 181 C 441 181 444 181 445 181 L 576 226 C 577 226 577 227 576 228 L 444 273 C 444 273 443 273 442 273 Z" stroke="#2563eb" fill="#eff6ff" style="stroke-width:2;" /></g><text x="442.000000" y="232.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">整体变形翘？</text></g><g class="YTI= ans"><g class="shape" ><rect x="647.000000" y="162.000000" width="197.000000" height="130.000000" rx="4.000000" stroke="#16a34a" fill="#f0fdf4" style="stroke-width:2;" /></g><text x="745.500000" y="200.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="745.500000" dy="0.000000">翘曲</tspan><tspan x="745.500000" dy="17.000000">工艺：</tspan><tspan x="745.500000" dy="17.000000">模温均匀 / 降料温</tspan><tspan x="745.500000" dy="17.000000">结构：</tspan><tspan x="745.500000" dy="17.000000">加筋 / 均匀壁厚</tspan></text></g><g class="cTM= q"><g class="shape" ><path d="M 442 423 C 441 423 440 423 440 423 L 308 378 C 307 378 307 377 308 376 L 440 331 C 441 331 444 331 445 331 L 576 376 C 577 376 577 377 576 378 L 444 423 C 444 423 443 423 442 423 Z" stroke="#2563eb" fill="#eff6ff" style="stroke-width:2;" /></g><text x="442.000000" y="382.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">填不满缺料？</text></g><g class="YTM= ans"><g class="shape" ><rect x="647.000000" y="312.000000" width="177.000000" height="130.000000" rx="4.000000" stroke="#16a34a" fill="#f0fdf4" style="stroke-width:2;" /></g><text x="735.500000" y="350.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="735.500000" dy="0.000000">短射</tspan><tspan x="735.500000" dy="17.000000">工艺：</tspan><tspan x="735.500000" dy="17.000000">提料温 / 提速</tspan><tspan x="735.500000" dy="17.000000">模具：</tspan><tspan x="735.500000" dy="17.000000">加大浇口 / 排气</tspan></text></g><g class="cTQ= q"><g class="shape" ><path d="M 442 573 C 441 573 440 573 440 573 L 308 528 C 307 528 307 527 308 526 L 440 481 C 441 481 444 481 445 481 L 576 526 C 577 526 577 527 576 528 L 444 573 C 444 573 443 573 442 573 Z" stroke="#2563eb" fill="#eff6ff" style="stroke-width:2;" /></g><text x="442.000000" y="532.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">有可见接缝？</text></g><g class="YTQ= ans"><g class="shape" ><rect x="647.000000" y="462.000000" width="197.000000" height="130.000000" rx="4.000000" stroke="#16a34a" fill="#f0fdf4" style="stroke-width:2;" /></g><text x="745.500000" y="500.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="745.500000" dy="0.000000">熔接痕</tspan><tspan x="745.500000" dy="17.000000">工艺：</tspan><tspan x="745.500000" dy="17.000000">提模温 / 提速</tspan><tspan x="745.500000" dy="17.000000">模具：</tspan><tspan x="745.500000" dy="17.000000">移浇口 / 加溢料槽</tspan></text></g><g class="cTU= q"><g class="shape" ><path d="M 442 723 C 441 723 440 723 440 723 L 308 678 C 307 678 307 677 308 676 L 440 631 C 441 631 444 631 445 631 L 576 676 C 577 676 577 677 576 678 L 444 723 C 444 723 443 723 442 723 Z" stroke="#2563eb" fill="#eff6ff" style="stroke-width:2;" /></g><text x="442.000000" y="682.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">分型面溢料？</text></g><g class="YTU= ans"><g class="shape" ><rect x="647.000000" y="612.000000" width="217.000000" height="130.000000" rx="4.000000" stroke="#16a34a" fill="#f0fdf4" style="stroke-width:2;" /></g><text x="755.500000" y="650.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="755.500000" dy="0.000000">飞边</tspan><tspan x="755.500000" dy="17.000000">工艺：</tspan><tspan x="755.500000" dy="17.000000">降压力 / 降料温</tspan><tspan x="755.500000" dy="17.000000">模具：</tspan><tspan x="755.500000" dy="17.000000">修分型面 / 加锁模力</tspan></text></g><g class="KHMwIC0mZ3Q7IHExKVswXQ=="><marker id="mk-d2-2440701399-3488378134" markerWidth="10.000000" markerHeight="12.000000" refX="7.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0.000000,0.000000 10.000000,6.000000 0.000000,12.000000" fill="#0D32B2" class="connection fill-B1" stroke-width="2" /> </marker><path d="M 179.000000 310.333008 L 207.000000 310.333008 S 217.000000 310.333008 217.000000 300.333008 L 217.000000 87.000000 S 217.000000 77.000000 227.000000 77.000000 L 303.000000 77.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHExIC0mZ3Q7IGExKVswXQ=="><path d="M 579.000000 77.000000 L 643.000000 77.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHMwIC0mZ3Q7IHEyKVswXQ=="><path d="M 179.000000 343.665985 L 257.000000 343.665985 S 267.000000 343.665985 267.000000 333.665985 L 267.000000 237.000000 S 267.000000 227.000000 277.000000 227.000000 L 303.000000 227.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHEyIC0mZ3Q7IGEyKVswXQ=="><path d="M 579.000000 227.000000 L 643.000000 227.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHMwIC0mZ3Q7IHEzKVswXQ=="><path d="M 179.000000 377.000000 L 303.000000 377.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHEzIC0mZ3Q7IGEzKVswXQ=="><path d="M 579.000000 377.000000 L 643.000000 377.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHMwIC0mZ3Q7IHE0KVswXQ=="><path d="M 179.000000 410.333008 L 257.000000 410.333008 S 267.000000 410.333008 267.000000 420.333008 L 267.000000 517.000000 S 267.000000 527.000000 277.000000 527.000000 L 303.000000 527.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHE0IC0mZ3Q7IGE0KVswXQ=="><path d="M 579.000000 527.000000 L 643.000000 527.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHMwIC0mZ3Q7IHE1KVswXQ=="><path d="M 179.000000 443.665985 L 207.000000 443.665985 S 217.000000 443.665985 217.000000 453.665985 L 217.000000 667.000000 S 217.000000 677.000000 227.000000 677.000000 L 303.000000 677.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><g class="KHE1IC0mZ3Q7IGE1KVswXQ=="><path d="M 579.000000 677.000000 L 643.000000 677.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-2440701399-3488378134)" mask="url(#d2-2440701399)" /></g><mask id="d2-2440701399" maskUnits="userSpaceOnUse" x="-9" y="-48" width="894" height="811">
+<rect x="-9" y="-48" width="894" height="811" fill="white"></rect>
+
+</mask><rect x="24" y="773" width="846" height="35" rx="5" fill="#dbeafe" stroke="#2563eb"/>
+<text x="447" y="791" text-anchor="middle" style="font-size:12px;fill:#1d4ed8;font-family:'PingFang SC','Microsoft YaHei','Hiragino Sans GB','Noto Sans CJK SC',sans-serif">排查顺序铁律：先调工艺（0 成本）→ 再修模具（千~万级）→ 最后改结构重开模（万~十万级）</text>
+<rect x="24" y="816" width="846" height="69" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="447" y="834" text-anchor="middle" style="font-size:12px;fill:#334155;font-family:'PingFang SC','Microsoft YaHei','Hiragino Sans GB','Noto Sans CJK SC',sans-serif">前置检查（任何缺陷先过一遍）</text>
+<text x="447" y="851" text-anchor="middle" style="font-size:12px;fill:#334155;font-family:'PingFang SC','Microsoft YaHei','Hiragino Sans GB','Noto Sans CJK SC',sans-serif">① 原料是否按要求烘干：PC 120 ℃×3~4 h、PA 80 ℃×4 h（未烘干 → 银丝 / 气泡，且水解使强度下降）</text>
+<text x="447" y="868" text-anchor="middle" style="font-size:12px;fill:#334155;font-family:'PingFang SC','Microsoft YaHei','Hiragino Sans GB','Noto Sans CJK SC',sans-serif">② 锁模力是否足够：锁模力(t) ≥ 投影面积(cm²) × 型腔压力(300~500 bar) / 1000（不足 → 必然飞边）</text>
+</svg>
