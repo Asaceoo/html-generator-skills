@@ -2,6 +2,11 @@
 
 本仓库所有显著变更记录于此。版本号遵循语义化版本（semver）；两份手册文件名中的版本号随本 CHANGELOG 同步（由 `scripts/release.py` 自动维护）。
 
+## [Unreleased]
+
+### Docs
+- README 新增三节：**用法**（对话式主用法 + 命令式全参数表：convert.ps1 / convert.sh / impact_analyzer / chart_validator / 直调 Python）、**使用说明**（三阶段工作流 / 语义 class 速查 / 模式与配色选择规则 / 输出与命名 / 生成端 7 条铁律）、**20 个使用实例**（覆盖 7 种文档模式、风格与内容控制、数据与交付场景）
+
 ## [1.9.1] - 2026-10
 
 ### Fixed
