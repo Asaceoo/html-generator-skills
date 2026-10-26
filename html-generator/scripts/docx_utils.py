@@ -959,3 +959,23 @@ def set_page_background(doc, bg_color_hex):
     # background 元素必须位于 displayBackgroundShape 之前（schema 顺序）
     # 插入到 settings 的最前面
     settings.insert(0, background_elem)
+
+
+# ===== 图表产出计数器（供转换后核对使用）=====
+# 背景：图表类容器（SVG/Canvas/图表卡）走"截图插入"或"数据重建"路径，
+# 其文本不以段落形式存在于 Word 中，无法用文本比对核对是否丢图。
+# 因此改为在成功产出时递增计数，转换结束后与 HTML 侧容器数量对账。
+# 计数器放 docx_utils（被各处理层共用且无循环导入）。
+CHART_RENDER_STATS = {"screenshotted": 0, "rebuilt": 0, "skipped": 0}
+
+
+def bump_chart_stat(kind, n=1):
+    """递增图表产出计数。kind: screenshotted / rebuilt / skipped"""
+    if kind in CHART_RENDER_STATS:
+        CHART_RENDER_STATS[kind] += n
+
+
+def reset_chart_stats():
+    """每次转换开始时重置计数，避免跨文件累加导致对账失真。"""
+    for k in CHART_RENDER_STATS:
+        CHART_RENDER_STATS[k] = 0

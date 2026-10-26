@@ -7,3 +7,8 @@ python-docx==1.1.2
 beautifulsoup4==4.12.3
 lxml==5.2.2
 playwright==1.45.0
+
+# 可选增强（缺失时自动降级，不影响主流程）：
+# pymupdf —— html2pdf.py 尾页空白页检测；未安装时打印 WARN 并跳过该检测
+pymupdf==1.24.10
+# cssutils —— 预解析 <style> 块，提升样式还原度；未安装时自动跳过

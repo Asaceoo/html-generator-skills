@@ -34,10 +34,19 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ===== 编码设置：确保 PowerShell 5.1 下 Python 输出中文不乱码 =====
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-$env:PYTHONIOENCODING = "utf-8"
+# ===== 编码设置：让输出编码与调用方保持一致，避免中文跨进程捕获乱码 =====
+# 不要强制设为 UTF-8：Windows 控制台宿主默认按系统 ANSI（如 GBK cp936）解码子进程
+# stdout，子进程无条件输出 UTF-8 字节会被父进程按 GBK 解码 → 中文变乱码，
+# 读取降级清单的一方（AI / 日志管道）将拿到不可解析的字符串。
+# 因此沿用宿主编码；Python 侧通过 PYTHONIOENCODING 使用同一编码。
+$inheritedCP = [Console]::OutputEncoding.CodePage
+if ($inheritedCP -eq 65001) {
+    $env:PYTHONIOENCODING = "utf-8"
+} elseif ($inheritedCP -gt 0) {
+    $env:PYTHONIOENCODING = "cp$inheritedCP"
+} else {
+    $env:PYTHONIOENCODING = "utf-8"
+}
 
 # $PSScriptRoot may be empty when invoked via & from another session
 $ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.PSCommandPath }
@@ -48,9 +57,15 @@ $ScriptsDir = Split-Path $ScriptDir  # parent: scripts/ directory
 function Get-PythonCmd {
     $useVenv = $false
 
-    # Prefer conda
+    # Prefer conda（仅当环境已存在；创建失败会留下标记，后续直接走 venv）
     $condaPath = Get-Command conda -ErrorAction SilentlyContinue
-    if ($condaPath) {
+    $envPathForMark = Join-Path $env:USERPROFILE ".html-convert-env"
+    $condaFailMark = Join-Path $envPathForMark ".conda_create_failed"
+    if ($condaPath -and (Test-Path $condaFailMark)) {
+        Write-Host "[INFO] 检测到上次 conda 环境创建失败标记，直接使用 venv" -ForegroundColor Cyan
+        $useVenv = $true
+    }
+    if ($condaPath -and -not $useVenv) {
         Write-Host "[INFO] conda detected, using conda environment" -ForegroundColor Cyan
         $envName = "html-convert"
         # 注意：conda 的进度条/通知写到 stderr，PowerShell 5.1 下会混入 stdout 污染后续变量，
@@ -60,6 +75,11 @@ function Get-PythonCmd {
             Write-Host "[INFO] First run, creating conda env $envName (~1min)..." -ForegroundColor Yellow
             conda create -n $envName python=3.11 -y 2>$null | Out-Null
             if ($LASTEXITCODE -ne 0) {
+                # 记录失败标记：离线/镜像源不可用时，避免每次转换都空耗 30s+
+                if (-not (Test-Path $envPathForMark)) {
+                    New-Item -ItemType Directory -Path $envPathForMark -Force | Out-Null
+                }
+                Set-Content -Path $condaFailMark -Value (Get-Date -Format "yyyy-MM-dd HH:mm:ss") -Encoding UTF8
                 Write-Host "[WARN] conda 环境创建失败（可能是镜像源/网络问题），回退到 venv..." -ForegroundColor Yellow
                 $useVenv = $true
             }

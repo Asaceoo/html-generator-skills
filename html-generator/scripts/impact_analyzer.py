@@ -27,10 +27,19 @@ import json
 import re
 
 # Windows 下 stdout/stderr 默认可能非 UTF-8（如 GBK），强制设为 UTF-8 避免中文输出乱码
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
+# 输出编码自适应：仅当默认编码无法表达中文（ASCII/latin-1/cp1252）时才切 UTF-8。
+# 原因：Windows 控制台宿主默认按系统 ANSI（如 GBK）解码子进程 stdout，无条件输出
+# UTF-8 会让中文在跨进程捕获时变成乱码（读取降级清单的一方将拿到不可解析的串）。
+# 因此保留 GBK/UTF-8 等原生编码不动，只在「注定乱码」的编码下切 UTF-8。
+def _ensure_stdio_encoding():
+    _unsafe = {"", "ascii", "us-ascii", "ansi-x3.4-1968", "cp1252", "latin-1", "iso-8859-1"}
+    for _stream in (sys.stdout, sys.stderr):
+        _enc = (getattr(_stream, "encoding", "") or "").lower().replace("_", "-")
+        if _enc in _unsafe and hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
+
+
+_ensure_stdio_encoding()
 
 # 确保同目录模块可被 import（即使从其他目录调用或通过 -m 运行）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -371,9 +380,15 @@ def format_output(result):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print("用法: python impact_analyzer.py <input.html> [--format docx|pdf|md] [--json]")
-        sys.exit(1)
+        print("")
+        print("转换前影响分析：列出 Word/PDF/Markdown 转换中会降级或丢失的项。")
+        print("  --format docx|pdf|md   目标格式（默认 docx）")
+        print("  --json                 输出 JSON（供入口脚本/LLM 解析）")
+        print("")
+        print("退出码：0 = 无降级无需提醒；1 = 存在降级（need_remind=true）")
+        sys.exit(0)
 
     html_path = sys.argv[1]
     fmt = "docx"

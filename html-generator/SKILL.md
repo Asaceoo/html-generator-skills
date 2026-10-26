@@ -61,7 +61,7 @@ description_cn: 专业 HTML 文档生成工具，可快速生成报告、方案�
 14. **甘特图规则**：当用户要求生成甘特图时，必须使用 `table.table` 语义 class（不要创建 `.gantt-*` 等自定义 class），时间维度按季度合并（如26Q4/27Q1/27Q2），总列数不超过8列（任务名1列+季度≤7列）。禁止使用 `overflow-x: auto` 或 `overflow-x: scroll` 实现横向滚动——Word/PDF/Markdown 无滚动条概念，宽表会溢出或截断。进度条用 `<td>` 内联背景色区分（如 `style="background:{accent};"`），里程碑用文字标记（如 ★）。若用户坚持要月度级别（18列以上），生成时允许 `overflow-x: auto`，但须在转换前通过 impact_analyzer 提醒用户"甘特图列数过多，Word/PDF 可读性可能下降"
 15. **SVG 图表坐标必须程序计算（强制）**：生成含 SVG 图表（饼图、环形图、折线图等）的 HTML 时，**禁止手写 path 的 `d` 属性坐标**。必须先用 Python `math.sin/cos` 按公式精确计算每个端点坐标（`x = cx + r * sin(radians(angle))`、`y = cy - r * cos(radians(angle))`），`large-arc-flag` 按 `sweep > 180° ? 1 : 0` 计算，再将计算结果写入 HTML。生成前**必须 Read `references/chart-guide.md`** 获取公式、Python 代码片段和标准 HTML 模板。颜色值必须用数组统一管理，path 的 `fill` 与 legend 的 `swatch` 引用同一份数据，禁止分别手写
 16. **SVG 图表生成后强制运行 chart_validator.py 校验**：HTML 中包含 SVG 图表（饼图/环形图/柱状图/折线图/面积图/雷达图/散点图等）时，生成完成后**必须运行** `python scripts/chart_validator.py {html文件}` 进行数学校验。校验项包括：饼图/环形图（path 坐标连续性、角度总和=360°、large-arc-flag 匹配、path fill 与 legend swatch 颜色一致性）、柱状图（条形数=标签数=数据项数）、折线图（数据点数=标签数、坐标在 viewBox 范围内、多线数据点数一致）、面积图（path 闭合性、坐标在 viewBox 范围内、数据点与标签对应）、雷达图（顶点数=维度数、多边形闭合、轴角度均匀分布）、散点图（散点数=数据项数、坐标在 viewBox 范围内、半径可见）。校验失败时修复 HTML 后重新校验，直到通过。校验脚本为只读，不修改任何文件
-17. **SVG 图表生成后强制截图+视觉模型检查（通用兜底）**：无论何种图表类型，生成完成后**必须**对包含图表的页面区域截图，并用视觉模型（image_understanding）检查图表形状是否正确。检查要点：饼图/环形图是否为完整圆形且扇形比例与数据匹配、折线图趋势方向是否正确、柱状图高度比例是否合理、图例颜色与图表颜色是否一致。这是 chart_validator.py 无法覆盖的图表类型（如折线图、面积图）的兜底保障，也是所有图表的最终视觉确认
+17. **SVG 图表生成后强制截图 + 视觉检查（通用兜底）**：无论何种图表类型，生成完成后**必须**对包含图表的页面区域截图，并用你所在环境可用的看图/多模态能力（读取截图后肉眼级核对）检查图表形状是否正确。检查要点：饼图/环形图是否为完整圆形且扇形比例与数据匹配、折线图趋势方向是否正确、柱状图高度比例是否合理、图例颜色与图表颜色是否一致。这是 chart_validator.py 无法覆盖的图表类型（如折线图、面积图）的兜底保障，也是所有图表的最终视觉确认
 
 **交互增强规则（可选，用户触发）**：
 
@@ -87,7 +87,7 @@ description_cn: 专业 HTML 文档生成工具，可快速生成报告、方案�
 
 **写后自检（强制）**：write 工具写入 HTML 后，检查 filePath 中的文件名是否为中文。若为拼音/英文，立即用正确中文名重新写入，并删除错误文件。
 
-**生成完成后**：使用 `preview_url` 或 `open_result_view` 展示给用户，并交付提示语：
+**生成完成后**：使用当前环境提供的预览/展示能力（如结果预览面板、文件展示工具，或直接在浏览器打开该 HTML）呈现给用户，并交付提示语：
 
 > 网页版报告已完成。如需转 Word / PDF / Markdown 格式，随时告诉我，我可一键转换。
 
@@ -103,7 +103,7 @@ description_cn: 专业 HTML 文档生成工具，可快速生成报告、方案�
 >
 > 如内置脚本报错，应排查报错原因并修复调用方式（如安装缺失依赖、检查文件路径），而非自行编写替代脚本。
 >
-> **conda 环境故障时的 venv 兜底**：如 `convert.ps1` 因 conda 环境损坏（`python.exe` 缺失或依赖包缺失）而失败，可直接用 venv 的 python.exe（`$env:USERPROFILE\.html-convert-env\Scripts\python.exe`）调用转换脚本绕过 conda 层。
+> **conda 不可用时的自动兜底**：`convert.ps1` 优先用 conda env `html-convert`；若环境创建/依赖安装失败（离线、镜像源不可用、conda 损坏），脚本会自动回退到 venv（`~/.html-convert-env`）并写入失败标记 `.conda_create_failed`，后续运行直接走 venv，不再重复等待。需强制重试 conda 时删除该标记文件。也可直接用 venv 的 python.exe（`$env:USERPROFILE\.html-convert-env\Scripts\python.exe`）调用转换脚本绕过环境探测。
 
 **两步确认流程**（LLM 执行）：
 

@@ -27,6 +27,7 @@ from docx_utils import (
     set_run_font, add_cell_paragraph, flush_pending_page_break, inject_page_break_before,
     set_cell_margins, set_table_borders_nil, set_table_borders, set_cell_borders, set_table_width_percent,
     apply_shading, apply_shading_to_cell, apply_shading_to_run,
+    bump_chart_stat,
 )
 from docx.shared import Pt, Cm, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -712,6 +713,7 @@ def _output_bar_chart(doc, section, palette, soup=None):
                 run_img = p_img.add_run()
                 run_img.add_picture(_io.BytesIO(png_bytes), width=_Inches(5.5))
                 print("[INFO] bar_chart: 已通过 Playwright 截图插入 Word")
+                bump_chart_stat("screenshotted")
                 return
         except Exception as e:
             print(f"[INFO] bar_chart: Playwright 截图不可用（{e}），回退数据行")
@@ -1480,6 +1482,7 @@ def process_chart_card(doc, section, palette, parsed_styles=None, soup=None):
                 run_img = p_img.add_run()
                 run_img.add_picture(_io.BytesIO(png_bytes), width=_Inches(5.5))
                 print("[INFO] mini_chart: 已通过 Playwright 截图插入 Word")
+                bump_chart_stat("screenshotted")
                 return
         except Exception as e:
             print(f"[INFO] mini_chart: Playwright 截图不可用（{e}），回退文本结构")
@@ -1618,6 +1621,7 @@ def process_chart_unknown(doc, section, palette, soup=None):
                 run = para.add_run()
                 run.add_picture(_io.BytesIO(png_bytes), width=_Inches(5.5))
                 print("[INFO] chart_unknown: 已通过 Playwright 截图插入 Word")
+                bump_chart_stat("screenshotted")
                 return
         except Exception as e:
             print(f"[INFO] chart_unknown: Playwright 截图不可用（{e}），降级到数据提取")
@@ -1671,6 +1675,7 @@ def process_chart_unknown(doc, section, palette, soup=None):
     # ===== 第 2 层：纯装饰元素 → 跳过 =====
     # 零文本零数据，无信息可保，直接跳过（不输出无意义的警告段落）
     print("[INFO] chart_unknown: 无可提取数据（纯装饰元素），已跳过")
+    bump_chart_stat("skipped")
     flush_pending_page_break(doc)
 
 

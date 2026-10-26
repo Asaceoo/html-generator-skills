@@ -1,6 +1,23 @@
 # Changelog
 
-本仓库所有显著变更记录于此。版本号遵循语义化版本（semver）；两份手册文件名中的版本号随本 CHANGELOG 同步。
+本仓库所有显著变更记录于此。版本号遵循语义化版本（semver）；两份手册文件名中的版本号随本 CHANGELOG 同步（由 `scripts/release.py` 自动维护）。
+
+## [1.9.0] - 2026-10
+
+### Added
+- **一键发布脚本** `scripts/release.py`：版本号递增（patch/minor/major）→ 同步三处 VERSION → 旧手册归档 `docs/archive/` → 生成新版手册（文件名 + 正文版本号同步替换）→ 打包 `dist/html-generator-v{版本}.zip`（排除 `__pycache__` / `.pyc` / `dist`）。支持 `--no-bump` / `--no-zip` / `--skill`
+- **Word 转换「图表产出对账」**：HTML 侧 SVG/Canvas 图表宿主数（同容器多 svg 合并计 1，减去"纯装饰跳过"数）与转换端实际产出数（截图 + 数据重建）比对。计数器 `CHART_RENDER_STATS` 位于 `docx_utils.py`，由 `html2docx_scene.py` 在各产出分支 `bump_chart_stat()` 递增，每次转换由 `reset_chart_stats()` 清零
+- `impact_analyzer.py` 支持 `--help`（此前 `--help` 被当作文件路径处理并报"输入文件不存在"）
+- `requirements.txt` 补入可选依赖 `pymupdf`（PDF 尾页空白页检测，缺失时自动降级）
+
+### Fixed
+- **中文输出乱码**：5 份脚本不再无条件 `sys.stdout.reconfigure(encoding='utf-8')`，改为仅在 ASCII / latin-1 / cp1252 等无法表达中文的编码下切换；`convert.ps1` 同步改为沿用宿主代码页设置 `PYTHONIOENCODING`。修复 Windows 宿主按 GBK 解码子进程 stdout 时，降级清单与状态日志变成不可解析乱码的问题
+- **conda 回退空等**：`convert.ps1` 在 conda 环境创建失败时写入 `~/.html-convert-env/.conda_create_failed` 标记，后续运行直接走 venv，消除每次转换约 30s 无效等待（删除标记可恢复 conda 尝试）
+- **文档一致性**：`html-generator/README.md` 的"主题拼音"命名改为技能规范要求的中文主题名；调色板语义色位数 19 → 20（与 `palettes.json` 一致）；`SKILL.md` 中 conda 兜底描述、视觉检查工具名（`image_understanding`）、预览方式（`preview_url` / `open_result_view`）改为环境无关表述
+
+### Changed
+- 文档体系重构：根目录 12 份历史手册移入 `docs/archive/`，当前手册统一放 `docs/用户手册_v{版本}.md` 与 `docs/技术手册_v{版本}.md`；根目录只保留 `VERSION` / `README.md` / `CHANGELOG.md`
+- `README.md` 重写：新增 3 张概念图（Mermaid 工作流图、Mermaid 架构图、内联 SVG 语义归约管道图）
 
 ## [1.2.0] - 2026-10
 

@@ -29,10 +29,19 @@ import os
 import re
 
 # Windows 下 stdout/stderr 默认可能非 UTF-8（如 GBK），强制设为 UTF-8 避免中文输出乱码
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
+# 输出编码自适应：仅当默认编码无法表达中文（ASCII/latin-1/cp1252）时才切 UTF-8。
+# 原因：Windows 控制台宿主默认按系统 ANSI（如 GBK）解码子进程 stdout，无条件输出
+# UTF-8 会让中文在跨进程捕获时变成乱码（读取降级清单的一方将拿到不可解析的串）。
+# 因此保留 GBK/UTF-8 等原生编码不动，只在「注定乱码」的编码下切 UTF-8。
+def _ensure_stdio_encoding():
+    _unsafe = {"", "ascii", "us-ascii", "ansi-x3.4-1968", "cp1252", "latin-1", "iso-8859-1"}
+    for _stream in (sys.stdout, sys.stderr):
+        _enc = (getattr(_stream, "encoding", "") or "").lower().replace("_", "-")
+        if _enc in _unsafe and hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
+
+
+_ensure_stdio_encoding()
 
 # 确保同目录模块可被 import（即使从其他目录调用或通过 -m 运行）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -56,6 +65,9 @@ from docx_utils import (
     extract_body_background,
     set_page_background,
     add_page_break,
+    CHART_RENDER_STATS,
+    bump_chart_stat,
+    reset_chart_stats,
 )
 
 # 核心层处理
@@ -89,6 +101,9 @@ from html2docx_advanced import (
 
 def convert_html_to_docx(html_path, docx_path):
     """主转换函数"""
+    # 每次转换重置图表产出计数（跨文件累加会让对账失真）
+    reset_chart_stats()
+
     with open(html_path, "r", encoding="utf-8-sig") as f:
         soup = BeautifulSoup(f.read(), "lxml")
 
@@ -338,11 +353,47 @@ def _verify_chart_container_coverage(soup, doc):
             if probe and probe not in full_docx:
                 missing.append((c.name, (c.get("class") or [""])[0], probe))
 
+        # ===== SVG / Canvas 图表容器对账（2026-10 新增）=====
+        # 背景：上面的文本核对只覆盖 funnel-stage / bar-row / bar 三类老式图表容器，
+        # 覆盖不到 SVG/Canvas 图表（目前最常见的图表形式）。此前含 SVG 的文档即使
+        # 有图表被静默跳过，也会打印「0 个图表容器全部找回」，形成核对盲区与误导。
+        # SVG 走「截图插入」或「数据重建」路径，文本不以段落形式存在于 Word 中，
+        # 因此改为「HTML 侧图表宿主数量 vs 转换端实际产出数量」对账。
+        _media_hosts = []
+        for _el in body.find_all(["svg", "canvas"]):
+            _host = _el
+            # 上浮到最近的块级宿主（最多 4 层），同一容器内多个 svg 计为一个图表
+            for _ in range(4):
+                if _host.parent is None or _host.parent is body:
+                    break
+                _host = _host.parent
+                if _host.name in ("div", "section", "figure", "li", "td"):
+                    break
+            if not any(_host is h for h in _media_hosts):
+                _media_hosts.append(_host)
+        _expected_media = len(_media_hosts) + len(body.find_all(class_="chart-card"))
+        _produced_media = CHART_RENDER_STATS["screenshotted"] + CHART_RENDER_STATS["rebuilt"]
+
         if missing:
             print(f"[WARNING] 图表容器核对：{len(missing)}/{len(containers)} 个图表容器文本未在 "
                   f"Word 中找到（可能被静默丢弃）。示例: {missing[:3]}")
         else:
-            print(f"[INFO] 图表容器核对通过：{len(containers)} 个图表容器全部找回")
+            print(f"[INFO] 图表容器核对通过：{len(containers)} 个图表容器文本全部找回")
+
+        # 纯装饰元素（零文本零数据）由转换端主动跳过，属设计内行为，不计入期望产出，
+        # 否则装饰性 SVG（图标、分隔线）会引发误报。
+        _skipped = CHART_RENDER_STATS["skipped"]
+        _net_expected = max(_expected_media - _skipped, 0)
+
+        if _net_expected > _produced_media:
+            print(f"[WARNING] 图表产出核对：HTML 中有 {_net_expected} 个 SVG/Canvas 图表容器待产出，"
+                  f"但 Word 中只产出 {_produced_media} 个（可能有图表被静默跳过）。"
+                  f"统计: 截图 {CHART_RENDER_STATS['screenshotted']} / "
+                  f"重建 {CHART_RENDER_STATS['rebuilt']} / 跳过 {CHART_RENDER_STATS['skipped']}")
+        elif _expected_media:
+            print(f"[INFO] 图表产出核对通过：{_expected_media} 个 SVG/Canvas 图表容器已全部产出"
+                  f"（截图 {CHART_RENDER_STATS['screenshotted']} / "
+                  f"重建 {CHART_RENDER_STATS['rebuilt']}）")
     except Exception as e:
         print(f"[WARNING] 图表容器核对失败（不影响转换结果）: {e}")
 

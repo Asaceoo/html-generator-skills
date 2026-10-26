@@ -19,11 +19,13 @@ HTML 是源文件，Word / PDF / Markdown 是派生格式——以 HTML 为准�
 html-generator/
 ├── SKILL.md                        # 技能主文档（LLM 执行流程）
 ├── README.md                       # 本文件（技能说明）
+├── VERSION                         # 版本号（与仓库根 VERSION 同步）
 ├── references/
 │   ├── semantic-classes.md         # 12 种语义 class 定义（生成端必读）
 │   ├── ir-blocks.md                # 25 种 IR 语义分类字典（转换端内部参考）
-│   ├── palettes.json               # 8 组调色板 × 19 语义色位
+│   ├── palettes.json               # 8 组调色板 × 20 语义色位
 │   ├── design-system.md            # 字体/字号/间距/视觉规范速查
+│   ├── chart-guide.md              # SVG 图表坐标计算公式与模板
 │   ├── interactive-pack.md         # 交互增强组件（L1 级，跨模式可选叠加）
 │   └── skeletons/
 │       ├── mode-doc.html           # 结构化长文（全组件示例）
@@ -60,7 +62,7 @@ html-generator/
 
 > "帮我生成一份《2026 年智能家居行业调研报告》"
 
-Agent 自动完成：确定文档模式（7 选 1）→ 确定调色板（8 选 1）→ 确定图片策略 → 生成 `{主题拼音}.html` 到用户工作目录，并展示预览。
+Agent 自动完成：确定文档模式（7 选 1）→ 确定调色板（8 选 1）→ 确定图片策略 → 生成 `{中文主题名}.html` 到用户工作目录，并展示预览。
 
 ### 2. 转换格式（用户主动触发）
 
@@ -120,3 +122,15 @@ A：能。所有图片在 HTML 生成阶段即 base64 内嵌，转换时直接�
 
 **Q：需要联网吗？**
 A：HTML 生成完全离线；转换脚本首次运行需下载依赖（Playwright Chromium），之后离线可用。
+
+**Q：转换日志里中文是乱码？**
+A：v1.9.0 起脚本沿用宿主控制台编码输出，不再无条件输出 UTF-8。仍乱码时把宿主代码页切到 65001 再运行。
+
+---
+
+## 版本与文档
+
+- 版本号唯一来源：仓库根 `VERSION`（本目录 `VERSION` 与其同步，由 `scripts/release.py` 维护）
+- 用户手册：`docs/用户手册_v{版本}.md`（场景 / 命令 / 模式与配色 / 降级说明 / FAQ）
+- 技术手册：`docs/技术手册_v{版本}.md`（架构 / 语义识别 / 校验机制 / 修改指南 / 回归清单）
+- 发版：`python scripts/release.py --part minor` —— 递增版本号 → 归档旧手册 → 生成新版手册 → 打包 `dist/html-generator-v{版本}.zip`
