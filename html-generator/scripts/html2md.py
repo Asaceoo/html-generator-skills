@@ -580,7 +580,9 @@ def render_comparison(el):
 
 def render_faq(el):
     lines = []
-    details = el.find("details")
+    # 兜底识别时 el 自身可能就是 <details>（find() 找不到自身），
+    # 必须按 el.name 判断，否则 <summary> 标题会被静默丢弃（与 Word 侧 process_faq 一致）。
+    details = el if el.name == "details" else el.find("details")
     if details:
         summary = details.find("summary")
         if summary:

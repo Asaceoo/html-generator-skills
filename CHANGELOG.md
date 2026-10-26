@@ -2,6 +2,11 @@
 
 本仓库所有显著变更记录于此。版本号遵循语义化版本（semver）；两份手册文件名中的版本号随本 CHANGELOG 同步（由 `scripts/release.py` 自动维护）。
 
+## [1.9.1] - 2026-10
+
+### Fixed
+- **Markdown 转换丢失 `<details>` 折叠标题**：`render_faq` 用 `el.find("details")` 查找后代节点，当元素本身就是 `<details>`（兜底识别的常见情形）时找不到自身，导致 `<summary>` 问题文本被静默丢弃。改为按 `el.name` 判断，与 Word 侧 `process_faq` 逻辑一致
+
 ## [1.9.0] - 2026-10
 
 ### Added
