@@ -297,6 +297,33 @@ def analyze_html(html_path, target_format="docx"):
                 items.append(MARKDOWN_DEGRADATION[ir])
         if "merged_cell" in css_features:
             items.append(MD_MERGED_CELL_DEGRADATION)
+
+        # 图表专项提醒（真机验证发现）：Markdown 无法承载图形，
+        # SVG 图表（饼/线/面/雷达/气泡/仪表/瀑布/桑基/箱线/小提琴/河流/区间/
+        # 阶梯/斜率/迷你图/象限/误差棒/玫瑰/树图/组合/帕累托/K线）转换后
+        # 只剩零散文本标签，数据全部丢失——必须提前告知，否则用户会以为数据还在。
+        svg_count = len(body.find_all("svg"))
+        if svg_count:
+            chart_svgs = [s for s in body.find_all("svg")
+                          if s.find_all(["path", "polyline", "polygon", "rect", "circle", "line"])]
+            if chart_svgs:
+                items.append(
+                    f"检测到 {len(chart_svgs)} 个 SVG 图表：Markdown 无法承载图形，"
+                    f"转换后仅保留文本标签，图形与数据会全部丢失"
+                    f"（如需保留图表请改用 HTML / Word / PDF）"
+                )
+        # 行内多 span 拼接会粘连成一串（如 "49%33%18%Q1"），Markdown 中不可读
+        glued = 0
+        for el in body.find_all(["div", "p", "td", "th", "span"]):
+            kids = [k for k in el.find_all("span", recursive=False)]
+            if len(kids) >= 3 and all(not k.get_text(strip=True).endswith(("。", "，", "；")) for k in kids):
+                glued += 1
+        if glued >= 3:
+            items.append(
+                f"检测到 {glued} 处行内多元素拼接（如百分比/数值/标签并列），"
+                f"转 Markdown 后可能粘连成串（如 \"49%33%18%Q1\"），可读性下降"
+            )
+
         return {"need_remind": len(items) > 0, "items": items, "format": target_format}
 
     # PDF：视觉保真度高，仅少量已知限制 + 交互组件降级
